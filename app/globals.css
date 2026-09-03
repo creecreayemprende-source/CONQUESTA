@@ -1,0 +1,164 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+
+  /* Modo claro (2026-08-23) — reemplaza el navy oscuro que era "cosa juzgada"
+     desde la referencia inicial; decisión explícita y detallada del usuario,
+     documentada como el nuevo contrato vigente en FICHA-ARTE.md. */
+  --surface-base: #F8FAFC;
+  --surface-primary: #FFFFFF;
+  --surface-secondary: #F1F5F9;
+  --surface-tertiary: #F8FAFC;
+  --surface-elevated: #FFFFFF;
+  --surface-overlay: rgba(15, 23, 42, 0.55);
+
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-tertiary: #94A3B8;
+
+  --border-default: #E2E8F0;
+  --border-strong: #CBD5E1;
+  --border-focus: #3B7DE8;
+
+  --brand-primary: #3B7DE8;
+  --brand-primary-hover: #2E6BD1;
+  --brand-primary-soft: rgba(59, 125, 232, 0.1);
+  --brand-primary-text: #FFFFFF;
+
+  --status-success: #2FA84A;
+  --status-success-soft: rgba(47, 168, 74, 0.1);
+  --status-error: #E5484D;
+  --status-error-soft: rgba(229, 72, 77, 0.1);
+  --status-locked: #64748B;
+  --gold: #D4A017;
+  --gold-soft: rgba(212, 160, 23, 0.12);
+  /* Dorado brillante para candados de contenido bloqueado — pedido explícito del
+     usuario (2026-08-23), distinto del --gold más apagado que ya usan monedas/estrellas. */
+  --gold-bright: #F59E0B;
+  --silver: #6B7A8F;
+  --bronze: #B4653F;
+
+  /* Racha — tinte cálido propio (antes compartía el gris de todos los chips del
+     TopBar, aportando a la sensación de monotonía). */
+  --flame: #D9691E;
+  --flame-soft: rgba(217, 105, 30, 0.12);
+
+  /* Con toda la app en modo claro, la "tarjeta clara" especial de la lista de
+     países ya no es un caso distinto — apunta a los mismos tokens primarios
+     (se conservan por compatibilidad de nombre, no son un modo aparte). */
+  --surface-inverse: var(--surface-primary);
+  --surface-inverse-active: var(--surface-secondary);
+  --text-inverse: var(--text-primary);
+  --text-inverse-soft: var(--text-secondary);
+
+  /* Colores de categoría — tomados del logo (2026-08-23): cada categoría hereda
+     el color de su pieza en el ícono circular de Conquesta. Gastronomía/Naturaleza/
+     Deportes se oscurecieron un punto respecto al valor del logo: en modo oscuro
+     leían bien, pero como TEXTO sobre el nuevo fondo blanco quedaban con poco
+     contraste — como fondo de chip (con ícono blanco encima) siguen leyendo igual. */
+  --cat-geografia: #1E8A8C;
+  --cat-historia: #2B4C7E;
+  --cat-cultura: #7C4FC9;
+  --cat-gastronomia: #B5691F;
+  --cat-naturaleza: #2F8A3D;
+  --cat-deportes: #C23A3A;
+
+  /* Paletas temáticas por Ruta (2026-08-23) — tarjetas estilo tiquete aéreo,
+     un degradado con personalidad propia por ruta en vez del navy plano. */
+  --ruta-andino-a: #2B4C7E;   /* azul andino */
+  --ruta-andino-b: #C1694F;   /* terracota */
+  --ruta-tropico-a: #0E8E7D;  /* verde esmeralda */
+  --ruta-tropico-b: #14B8A6;  /* turquesa caribe */
+  --ruta-norte-a: #D4A017;    /* dorado */
+  --ruta-norte-b: #16305A;    /* azul profundo */
+  --ruta-bloqueada-a: #16305A;
+  --ruta-bloqueada-b: #1B3A63;
+
+  --shadow-sm: 0 2px 8px rgba(0,0,0,.25);
+  --shadow-md: 0 6px 20px rgba(0,0,0,.3);
+  --shadow-lg: 0 14px 36px rgba(0,0,0,.35);
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.125rem;
+  --radius-full: 9999px;
+
+  --font-display: var(--font-baloo), system-ui, sans-serif;
+  --font-body: var(--font-nunito), system-ui, sans-serif;
+
+  --bg: var(--surface-base);
+  --surface: var(--surface-primary);
+  --text: var(--text-primary);
+  --accent: var(--brand-primary);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@theme inline {
+  --color-surface-base: var(--surface-base);
+  --color-surface-primary: var(--surface-primary);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-surface-tertiary: var(--surface-tertiary);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-hover: var(--brand-primary-hover);
+  --color-brand-primary-soft: var(--brand-primary-soft);
+  --color-txt-primary: var(--text-primary);
+  --color-txt-secondary: var(--text-secondary);
+  --color-txt-tertiary: var(--text-tertiary);
+  --color-border-default: var(--border-default);
+  --color-border-strong: var(--border-strong);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-gold-bright: var(--gold-bright);
+  --color-silver: var(--silver);
+  --color-bronze: var(--bronze);
+  --color-flame: var(--flame);
+  --color-flame-soft: var(--flame-soft);
+  --color-surface-inverse: var(--surface-inverse);
+  --color-surface-inverse-active: var(--surface-inverse-active);
+  --color-text-inverse: var(--text-inverse);
+  --color-text-inverse-soft: var(--text-inverse-soft);
+  --color-status-locked: var(--status-locked);
+  --color-status-success: var(--status-success);
+  --color-status-success-soft: var(--status-success-soft);
+  --color-status-error: var(--status-error);
+  --color-status-error-soft: var(--status-error-soft);
+  --color-cat-geografia: var(--cat-geografia);
+  --color-cat-historia: var(--cat-historia);
+  --color-cat-cultura: var(--cat-cultura);
+  --color-cat-gastronomia: var(--cat-gastronomia);
+  --color-cat-naturaleza: var(--cat-naturaleza);
+  --color-cat-deportes: var(--cat-deportes);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
+  --ease-out: var(--ease-out);
+  --ease-spring: var(--ease-spring);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
