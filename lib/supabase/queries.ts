@@ -137,7 +137,6 @@ export async function pushAppState(supabase: SupabaseClient, userId: string, sta
       longest_streak: state.longestStreak,
       last_active_on: state.lastActiveOn,
       categorias_favoritas: state.categoriasFavoritas,
-      trial_inicio_fecha: state.trialInicioFecha,
       musica_silenciada: state.musicaSilenciada,
       insignias_ganadas: state.insigniasGanadas,
       inventario_cincuenta: state.inventario.cincuenta,
@@ -182,6 +181,17 @@ export async function pushAppState(supabase: SupabaseClient, userId: string, sta
   if (filasRonda.length > 0) {
     await supabase.from("progreso_ronda").upsert(filasRonda, { onConflict: "user_id,pais,categoria,ronda" });
   }
+}
+
+/** Único camino real para activar el trial de 7 días — lo fija el servidor
+ * (RPC `iniciar_trial_gratis`, idempotente: nunca lo reinicia si ya se usó).
+ * `trial_inicio_fecha` ya NO es una columna que el cliente pueda escribir
+ * directo (ver 0004_fix_trial_reset_exploit.sql) — antes cualquiera podía
+ * resetear su propio trial infinitas veces desde la consola del navegador. */
+export async function iniciarTrialServidor(supabase: SupabaseClient): Promise<string | null> {
+  const { data, error } = await supabase.rpc("iniciar_trial_gratis");
+  if (error) return null;
+  return (data as string | null) ?? null;
 }
 
 /** ¿Este estado local tiene algo de verdad para migrar a la cuenta recién

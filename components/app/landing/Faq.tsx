@@ -5,24 +5,24 @@ import { ChevronDown } from "lucide-react";
 
 const preguntas = [
   {
-    q: "¿Por qué pagar si hay apps de geografía gratis?",
-    a: "Porque esas apps son un mapa con preguntas sueltas, sin narrativa ni ganas de volver. Conquesta te hace recorrer el mundo de verdad: conquistas países, no respondes preguntas al azar.",
+    q: "¿Qué aprendo exactamente en cada país?",
+    a: "No es solo el mapa. Cada país tiene 6 categorías reales: Geografía, Historia, Cultura, Gastronomía, Naturaleza y Deportes — su comida, su música, sus héroes, su fauna, sus campeones. Es el recorrido cultural completo de un país, no solo dónde queda.",
+  },
+  {
+    q: "¿Por qué pagar si hay apps de trivia gratis?",
+    a: "Porque esas apps son preguntas sueltas sin ningún hilo — hoy una capital, mañana una bandera, y ya. Conquesta te hace recorrer el mundo país por país, con las 6 categorías completas de cada uno: cuando conquistas Colombia, sabes de Colombia — no solo dónde está en el mapa.",
   },
   {
     q: "Ya pagué por países en otra app y me los quitaron al cambiar de modelo",
     a: "En Conquesta eso no pasa: lo que desbloqueas —en el plan gratis o en Pro— es tuyo para siempre, aunque canceles la suscripción más adelante.",
   },
   {
-    q: "No tengo tiempo para aprender geografía",
-    a: "Cada nivel dura entre 3 y 5 minutos. Está pensado para la fila del banco o el bus, no para sentarte a estudiar.",
+    q: "No tengo tiempo para aprender cultura general",
+    a: "Cada nivel dura entre 3 y 5 minutos. Está pensado para la fila del banco o el bus, no para sentarte a estudiar — y al final de un país te llevas historia, gastronomía, naturaleza y deporte, no solo un dato suelto.",
   },
   {
     q: "¿Es muy cara para mi país?",
     a: "El plan Pro anual queda en $3.33 USD al mes — precio de lanzamiento pensado para el bolsillo LATAM, no para el mercado americano.",
-  },
-  {
-    q: "¿Las preguntas son solo capitales, algo aburrido?",
-    a: "No. Cada país tiene 5 categorías reales: Geografía, Historia, Cultura, Gastronomía y Naturaleza — cultura general que de verdad te sirve en una conversación.",
   },
 ];
 

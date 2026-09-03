@@ -8,6 +8,12 @@ import { PAISES_AMERICA } from "@/lib/countries-data";
 import { rutaDelPais } from "@/lib/rutas-data";
 import { Flame, Gem, Coins, LogOut, Settings, Volume2, VolumeX } from "lucide-react";
 import { PassportStamp, type EstadoSello } from "@/components/app/PassportStamp";
+import { supabaseBrowser } from "@/lib/supabase/client";
+
+// Solo países con una Ruta real asignada pueden llegar a conquistarse alguna
+// vez (`rutaDelPais`) — mostrar los demás en el pasaporte prometería contenido
+// sin ningún camino de desbloqueo (bug real encontrado en la auditoría).
+const PAISES_CON_RUTA = PAISES_AMERICA.filter((p) => rutaDelPais(p.nombre) !== undefined);
 
 export default function PerfilPage() {
   const { state, setState, ready } = useAppState();
@@ -55,14 +61,13 @@ export default function PerfilPage() {
       <div className="rounded-2xl border border-border-default bg-surface-primary p-4">
         <h2 className="mb-3 font-display text-sm font-bold text-txt-primary">Tu pasaporte</h2>
         <div className="grid grid-cols-4 gap-3">
-          {PAISES_AMERICA.map((p) => {
+          {PAISES_CON_RUTA.map((p) => {
             // Estado real: conquistado (Reto Final aprobado) > desbloqueado
             // (le toca jugarlo ahora y no requiere Pro, o ya está en trial/Pro)
             // > requierePro (le toca en secuencia pero es de pago) > bloqueado
-            // (sin Ruta asignada, o el país anterior de su Ruta sin conquistar).
+            // (el país anterior de su Ruta sin conquistar).
             const conquistado = progresoDePais(state, p.nombre).retoFinalCompletado;
-            const tieneRuta = rutaDelPais(p.nombre) !== undefined;
-            const secuenciaOk = tieneRuta && paisDesbloqueadoEnRuta(state, p.nombre);
+            const secuenciaOk = paisDesbloqueadoEnRuta(state, p.nombre);
             const jugable = !conquistado && secuenciaOk && puedeJugarPais(state, p.nombre);
             const requierePro = !conquistado && secuenciaOk && !jugable;
             const estado: EstadoSello = conquistado
@@ -106,7 +111,10 @@ export default function PerfilPage() {
 
       <button
         type="button"
-        onClick={() => router.push("/")}
+        onClick={async () => {
+          await supabaseBrowser().auth.signOut();
+          router.push("/");
+        }}
         className="flex items-center gap-3 rounded-xl border border-border-default bg-surface-primary p-3.5 text-sm font-medium text-status-error"
       >
         <LogOut className="h-4 w-4" strokeWidth={2.2} />

@@ -15,11 +15,11 @@ export const PAISES_AMERICA: Pais[] = [
   { codigo: "COL", nombre: "Colombia", colorBandera: "#FFD200", esGratis: true, orden: 1, imagen: "/images/colombia.png" },
   { codigo: "PER", nombre: "Perú", colorBandera: "#D91023", esGratis: false, orden: 2, imagen: "/images/peru.png" },
   { codigo: "CHL", nombre: "Chile", colorBandera: "#0033A0", esGratis: false, orden: 3, imagen: "/images/chile.png" },
-  // Ruta 2 — Ritmo y Trópico (Pro, sin contenido real todavía).
-  { codigo: "BRA", nombre: "Brasil", colorBandera: "#009C3B", esGratis: false, orden: 4 },
-  { codigo: "CUB", nombre: "Cuba", colorBandera: "#002A8F", esGratis: false, orden: 5 },
-  { codigo: "CRI", nombre: "Costa Rica", colorBandera: "#002B7F", esGratis: false, orden: 6 },
-  // Ruta 3 — Ecos del Norte (Pro, sin contenido real todavía).
+  // Ruta 2 — Ritmo y Trópico (Pro, contenido real de trivia ya cargado).
+  { codigo: "BRA", nombre: "Brasil", colorBandera: "#009C3B", esGratis: false, orden: 4, imagen: "/images/brasil.png" },
+  { codigo: "CUB", nombre: "Cuba", colorBandera: "#002A8F", esGratis: false, orden: 5, imagen: "/images/cuba.png" },
+  { codigo: "CRI", nombre: "Costa Rica", colorBandera: "#002B7F", esGratis: false, orden: 6, imagen: "/images/costa-rica.png" },
+  // Ruta 3 — Ecos del Norte (Pro, contenido real de trivia ya cargado; sin foto de portada todavía).
   { codigo: "MEX", nombre: "México", colorBandera: "#006341", esGratis: false, orden: 7 },
   { codigo: "USA", nombre: "Estados Unidos", colorBandera: "#3C3B6E", esGratis: false, orden: 8 },
   { codigo: "CAN", nombre: "Canadá", colorBandera: "#FF0000", esGratis: false, orden: 9 },

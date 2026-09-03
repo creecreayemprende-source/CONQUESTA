@@ -42,3 +42,27 @@ const BANCO_CULTURA_GENERAL: PreguntaTrivia[] = [
 export function preguntasCulturaGeneral(cantidad = RETO_CULTURA_GENERAL_CONFIG.cantidad): PreguntaTrivia[] {
   return shuffle(BANCO_CULTURA_GENERAL).slice(0, Math.min(cantidad, BANCO_CULTURA_GENERAL.length)).map(shuffleOpciones);
 }
+
+/** Igual que `preguntasCulturaGeneral()`, pero también devuelve los ÍNDICES
+ * usados dentro de `BANCO_CULTURA_GENERAL` — para un reto 1 a 1, guardamos
+ * esos índices y así el retado responde EXACTAMENTE las mismas preguntas
+ * (el orden de las opciones sí se vuelve a barajar por jugador, eso no afecta
+ * la justicia del puntaje). */
+export function preguntasCulturaGeneralConIndices(
+  cantidad = RETO_CULTURA_GENERAL_CONFIG.cantidad
+): { preguntas: PreguntaTrivia[]; indices: number[] } {
+  const indicesBarajados = shuffle(BANCO_CULTURA_GENERAL.map((_, i) => i)).slice(
+    0,
+    Math.min(cantidad, BANCO_CULTURA_GENERAL.length)
+  );
+  return {
+    preguntas: indicesBarajados.map((i) => shuffleOpciones(BANCO_CULTURA_GENERAL[i])),
+    indices: indicesBarajados,
+  };
+}
+
+/** Reconstruye el MISMO set de preguntas de un reto 1 a 1 ya creado, a partir
+ * de los índices guardados — para que el retado juegue exactamente lo mismo. */
+export function preguntasPorIndices(indices: number[]): PreguntaTrivia[] {
+  return indices.map((i) => shuffleOpciones(BANCO_CULTURA_GENERAL[i]));
+}

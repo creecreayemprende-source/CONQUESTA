@@ -30,7 +30,12 @@ export async function updateSession(request: NextRequest) {
   const enAppInterna = request.nextUrl.pathname.startsWith("/app");
   if (enAppInterna && !user) {
     const url = request.nextUrl.clone();
+    // Se guarda a dónde iba (ej. aceptar un reto 1v1 por link) para volver
+    // ahí mismo después de loguearse, en vez de siempre caer al Mapa.
+    const destino = url.pathname + url.search;
     url.pathname = "/login";
+    url.search = "";
+    url.searchParams.set("next", destino);
     return NextResponse.redirect(url);
   }
 

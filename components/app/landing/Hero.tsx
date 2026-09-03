@@ -57,9 +57,6 @@ export function Hero() {
               <Flag className="h-3.5 w-3.5" strokeWidth={2.2} />
             </span>
           </div>
-          <p className="mt-3 text-center text-xs text-txt-tertiary">
-            Mockup del mecanismo real — la app está en construcción (Sesión 5)
-          </p>
         </div>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-txt-secondary">
@@ -67,7 +64,7 @@ export function Hero() {
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-primary-soft text-brand-primary">
               <Globe2 className="h-4 w-4" strokeWidth={2.4} />
             </span>
-            5 categorías por país
+            6 categorías por país
           </div>
           <div className="flex items-center gap-2">
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-primary-soft text-brand-primary">

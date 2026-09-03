@@ -323,7 +323,7 @@ export default function JugarRondaPage({
         </button>
       </div>
 
-      <div className="flex flex-1 flex-col justify-center gap-6 py-6">
+      <div className="flex flex-1 flex-col gap-6 pb-6 pt-8">
         <h1 className="text-balance font-display text-2xl font-bold leading-tight text-txt-primary">
           {pregunta.pregunta}
         </h1>

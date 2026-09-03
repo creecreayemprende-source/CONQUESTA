@@ -333,7 +333,7 @@ export default function RetoFinalPage({ params }: { params: Promise<{ pais: stri
         </button>
       </div>
 
-      <div className="flex flex-1 flex-col justify-center gap-6 py-6">
+      <div className="flex flex-1 flex-col gap-6 pb-6 pt-8">
         <p className="text-xs font-semibold" style={{ color: CATEGORIA_COLOR[pregunta.categoria] }}>
           {pregunta.categoria}
         </p>

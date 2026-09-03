@@ -3,6 +3,7 @@ import { Hero } from "@/components/app/landing/Hero";
 import { Problema } from "@/components/app/landing/Problema";
 import { Agitacion } from "@/components/app/landing/Agitacion";
 import { Solucion } from "@/components/app/landing/Solucion";
+import { VideoViaje } from "@/components/app/landing/VideoViaje";
 import { AppPorDentro } from "@/components/app/landing/AppPorDentro";
 import { Oferta } from "@/components/app/landing/Oferta";
 import { Garantia } from "@/components/app/landing/Garantia";
@@ -19,6 +20,7 @@ export default function Home() {
       <Problema />
       <Agitacion />
       <Solucion />
+      <VideoViaje />
       <MiniCta texto="Quiero conquistar mi primer país" />
       <AppPorDentro />
       <MiniCta texto="Ver mi mapa gratis" />

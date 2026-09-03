@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { loadAppState, saveAppState, type AppState } from "@/lib/app-state";
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { fetchAppState, pushAppState, tieneProgresoLocal } from "@/lib/supabase/queries";
+import { fetchAppState, pushAppState, tieneProgresoLocal, iniciarTrialServidor } from "@/lib/supabase/queries";
 
 interface Ctx {
   state: AppState;
@@ -43,7 +43,12 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
 
       if (esNuevo && tieneProgresoLocal(local)) {
         await pushAppState(supabase, user.id, local);
-        setState(local);
+        // El trial gratis de 7 días es la única excepción: nunca lo escribe
+        // el cliente directo (ver 0004_fix_trial_reset_exploit.sql) — si el
+        // paywall lo activó ANTES de loguearse, aquí se oficializa server-side
+        // una sola vez, de forma segura e idempotente.
+        const trialReal = local.trialInicioFecha ? await iniciarTrialServidor(supabase) : null;
+        setState(trialReal ? { ...local, trialInicioFecha: trialReal } : local);
       } else {
         setState(remoto);
         saveAppState(remoto);

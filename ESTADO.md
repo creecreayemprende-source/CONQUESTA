@@ -554,6 +554,99 @@ Siguiendo al pie de la letra `18-VENTA-HOTMART.md` → "SEGURIDAD DEL WEBHOOK DE
 2. `git init` + GitHub + Vercel (`62-PUBLICACION-SEGURA-Y-CONTINUA.md`) — todavía no existe repositorio para Conquesta (el conector de GitHub ya está listo para usarse en ese paso).
 3. Configurar Google OAuth en Supabase (opcional, el usuario decide si lo quiere ya o después).
 
+## Auditoría senior 6-dimensiones — diagnóstico + Capa 1 ejecutada (2026-09-03)
+El usuario pidió una auditoría completa (producto/diseño/UX/backend/seguridad/IA). Diagnóstico hecho con renders reales a 375px de las 12 pantallas clave (bypass temporal de auth en `lib/supabase/middleware.ts`, aprobado, revertido con `git diff` limpio antes de tocar nada). Reporte completo entregado en el chat; el usuario aprobó ejecutar todo. Orden: (1) Seguridad/backend → (2) bugs/estados → (3) diseño → (4) craft → (5) retención → (6) auditoría final.
+
+### Capa 1 — Seguridad y backend: CERRADA
+**Hallazgo crítico real**: `trial_inicio_fecha` (el trial gratis de 7 días) era una columna que el usuario autenticado podía escribir directo — cualquiera podía abrir la consola del navegador y resetear su propio trial infinitas veces, gratis para siempre.
+- `supabase/migrations/0004_fix_trial_reset_exploit.sql` (aplicada): revoca esa columna del grant de `authenticated`; único camino ahora es la RPC `iniciar_trial_gratis()` (security definer, idempotente — `coalesce(trial_inicio_fecha, current_date)`, nunca resetea si ya existe).
+- `lib/supabase/queries.ts`: `pushAppState` ya NO envía `trial_inicio_fecha` (fallaría con permission denied si lo hiciera); nueva función `iniciarTrialServidor()`.
+- `app/paywall/page.tsx`: si ya hay sesión real, activa el trial vía la RPC de una vez; si el paywall ocurre ANTES del login (flujo normal onboarding→paywall→login), solo marca la intención en local.
+- `lib/app-state-context.tsx`: al migrar el progreso local a la cuenta nueva en el primer login, si había intención de trial local, la oficializa vía la misma RPC seguro.
+
+**Verificado**: `npx tsc --noEmit` ✓. Contra la base de datos real (vía `execute_sql`, simulando el rol `authenticated`): un `UPDATE` directo a `trial_inicio_fecha` ahora falla con `permission denied for table profiles` ✓; la RPC `iniciar_trial_gratis()` llamada DOS VECES devuelve la MISMA fecha ambas veces (no resetea) ✓. Datos de prueba revertidos.
+
+### Capa 2 — Bugs y estados faltantes: CERRADA
+- **Ranking real**: reemplazado el arreglo mock (`Marta R.`, `Julián C.`...) por datos reales. `supabase/migrations/0005_ranking_real.sql` — RPC `ranking_paises_conquistados(p_dias)` (security definer, cuenta `progreso_pais.reto_final_completado` por usuario, filtra por ventana de días para Semanal/Mensual/General, marca `es_actual`), sin acceso para `anon`. `app/app/ranking/page.tsx` reescrito: fetch real + loading skeleton + estado de error + estado vacío ("todavía no hay conquistas") + podio solo si hay ≥3 jugadores reales.
+  - **Bug real encontrado y corregido durante la verificación**: si la llamada a la RPC fallaba (permiso/red), la promesa se RECHAZABA en vez de resolver con `{error}` y sin `.catch()` la pantalla se quedaba en el skeleton de carga PARA SIEMPRE. Corregido envolviendo la llamada en un `async/try-catch`.
+- **Perfil — pasaporte con países fantasma**: `PAISES_AMERICA` incluye Argentina/Ecuador/Venezuela/Uruguay/Paraguay, que no pertenecen a ninguna Ruta ni tienen banco de preguntas — eran estructuralmente imposibles de desbloquear pero se mostraban en el pasaporte. `app/app/perfil/page.tsx` ahora filtra a `PAISES_CON_RUTA` (solo países con `rutaDelPais()` definido).
+- **"Cerrar sesión" no cerraba sesión real**: solo navegaba a `/` sin invalidar la sesión de Supabase (el usuario seguía autenticado del lado del servidor). Corregido: ahora llama `supabase.auth.signOut()` antes de navegar.
+
+### Verificación de la Capa 2
+`npx tsc --noEmit` ✓ · `npm run build` ✓ · verificado con bypass temporal (revertido, `git diff` limpio): Perfil muestra únicamente los 9 países reales (antes 14) ✓; Ranking en una pestaña NUEVA (para evitar bundle cacheado) muestra el estado de error correctamente en vez de quedarse cargando ✓ (el caso de éxito con datos reales ya se verificó aparte contra la base de datos real vía SQL directo: la RPC devuelve filas correctas y cuenta bien los países conquistados).
+
+### Capa 3 — Diseño y jerarquía: CERRADA
+- **Landing (`Hero.tsx`)**: quitada la leyenda "Mockup del mecanismo real — la app está en construcción (Sesión 5)" visible a cualquier visitante real; corregido "5 categorías por país" → "6 categorías por país" (copy desactualizado desde que se agregó Deportes).
+- **`AppPorDentro.tsx` reescrito**: el carrusel "Conquesta por dentro" mostraba 4 placeholders vacíos con ícono de cámara y el texto "Captura real — pendiente (Sesión 5)" — ahora Sesión 5 ya existe, así que se reemplazó por 4 mini-mockups ilustrativos reales (Mapa, País, Reto Final, Pasaporte) con los colores/tokens reales del sistema (mismo patrón ya usado en el Hero), no una foto real pero tampoco un vacío "pendiente".
+- **Vacío muerto corregido en 3 pantallas**: `/app/retos` (el estado "próximamente" ahora se centra en el espacio restante en vez de dejar ~600px de fondo vacío debajo), la Ronda de juego y el Reto Final (la pregunta ya no se centra verticalmente en toda la pantalla — quedaba con un hueco de ~300-350px arriba y abajo; ahora se ancla arriba con espaciado fijo), Onboarding (mismo ajuste, aplicado a los 10 pasos por compartir un solo contenedor).
+- Revisado `Problema.tsx` (landing) a fondo: el código es limpio y estándar — la impresión de vacío de la auditoría fue un artefacto de scroll, no un bug real. Sin cambios.
+
+### Capa 5 — Retención y engagement: CERRADA
+- **Nav visible durante el juego cronometrado** (riesgo real de tap accidental sacando al usuario de un reto a mitad de camino): `components/app/shell/BottomNav.tsx` ahora se oculta por completo en `/app/jugar/*` y `/app/retos/desafio`.
+
+### Verificación de las Capas 3 y 5
+`npx tsc --noEmit` ✓ · `npm run build` ✓ (20 rutas) · verificado con el mismo bypass temporal (revertido, `git diff lib/supabase/middleware.ts` limpio): landing sin la leyenda de desarrollo y con "6 categorías" ✓; carrusel "Conquesta por dentro" mostrando las 4 mini-pantallas ilustrativas reales ✓; `/app/retos` con el estado vacío centrado (ya no hay vacío muerto) ✓; Ronda de juego con la pregunta anclada arriba y el nav completamente oculto ✓.
+
+## Capa 4 (animaciones/craft) y Capa 6 (auditoría final)
+No se encontraron hallazgos propios de animación en el diagnóstico (las animaciones ya construidas en sesiones previas — confetti, conteo animado, iconos animados por categoría — se mantienen intactas, no se tocaron). Capa 6: build final limpio confirmado arriba; `git diff --stat` confirmó que SOLO se tocaron los archivos de las capas aprobadas (13 archivos, todos documentados arriba) — nada fuera de lo aprobado.
+
+### Puntaje de cierre: **8/10** (subió de 6.5/10)
+Los 3 huecos de integridad más graves del diagnóstico (trial reseteable infinito, ranking con datos inventados, paywall que no factura) — el primero y el segundo quedaron cerrados de raíz; el tercero (checkout real de Hotmart) sigue pendiente porque depende de un paso 100% manual del usuario (crear el producto en el panel de Hotmart) que no se puede resolver desde código. Los 2 puntos que faltan para 10/10 son, en orden: (1) conectar el botón de pago al checkout real de Hotmart en cuanto el producto exista, (2) verificación visual formal con el subagente `revisor-visual` sobre archivos de screenshot reales (pendiente por la misma limitación de mecanismo de captura ya documentada en sesiones anteriores).
+
+## Ronda de feedback real del usuario sobre la landing (2026-09-03)
+El usuario revisó la página de ventas ya corriendo y encontró 3 cosas reales:
+1. **Plan mensual no seleccionable**: `Oferta.tsx` solo mostraba la tarjeta Pro anual, con el mensual reducido a una nota de texto sin poder elegirlo. Corregido: selector real Anual/Mensual (mismo patrón que `/paywall`) que cambia precio y detalle en vivo.
+2. **Copy hablaba solo de geografía + bug de "5 categorías"**: el FAQ (y de paso `Solucion.tsx`) seguían promocionando la app como si fuera solo mapas/capitales, y el conteo de categorías decía "5" en dos archivos (la app real tiene 6 desde hace varias sesiones — Geografía, Historia, Cultura, Gastronomía, Naturaleza, Deportes). Reescritas las 5 preguntas del FAQ para vender el recorrido cultural completo (nueva pregunta #1: "¿Qué aprendo exactamente en cada país?"), corregido el conteo en `Solucion.tsx`.
+3. **Pidió el video real de la app en la landing**: nueva sección `VideoViaje.tsx` (insertada después de "Solución", antes del primer MiniCta) con el mismo video que usa la promo card del Mapa (`/videos/avion-mundo.mp4`), con copy que refuerza "6 frentes culturales, no solo el mapa".
+
+### Verificación
+`npx tsc --noEmit` ✓ · `npm run build` ✓ · en el navegador: el toggle Anual/Mensual cambia el precio mostrado en vivo (confirmado $3.33→$3.99) ✓; las 5 preguntas del FAQ confirmadas con el copy nuevo ✓; el video real reproduciéndose en la nueva sección ✓; grep confirmó cero instancias restantes de "5 categorías" en todo el código. Consola sin errores.
+
+## Assets reales agregados: mapa de Ruta 1 + fotos de Brasil/Cuba/Costa Rica (2026-09-03)
+El usuario compartió 4 imágenes reales (ya generadas por él, guardadas en su carpeta de Descargas) y pidió colocarlas en la app:
+- **`public/images/mapa-origen-andino.jpg`**: mapa de Sudamérica con Colombia/Perú/Chile resaltados — agregado como `mapaImagen` (campo nuevo en `Ruta`, `lib/rutas-data.ts`) y renderizado en `app/app/ruta/[rutaId]/page.tsx`, exactamente en el espacio que el usuario marcó (debajo de la lista de países, antes del nav).
+- **`public/images/brasil.png`, `cuba.png`, `costa-rica.png`**: fotos de portada reales para los 3 países de la Ruta 2 (antes usaban el color de bandera plano de respaldo — pendiente ya cerrado). Agregadas al campo `imagen` de sus entradas en `PAISES_AMERICA` (`lib/countries-data.ts`), mismo patrón que Colombia/Perú/Chile. De paso se corrigieron 2 comentarios desactualizados en ese archivo y en `rutas-data.ts` que todavía decían "sin contenido real" para las Rutas 2/3 (ya tienen banco de preguntas desde el 2026-09-02).
+
+### Verificación
+`npx tsc --noEmit` ✓ · `npm run build` ✓ · verificado con el bypass temporal de siempre (revertido, `git diff` limpio) + una inyección de progreso de prueba en `localStorage` (revertida) para poder ver Brasil desbloqueado: el mapa de Sudamérica se ve correctamente en la Ruta 1, y la foto real de Brasil se ve correctamente en su página de país (Cuba/Costa Rica usan el mismo componente, no se forzó su desbloqueo pero comparten el mismo código ya verificado).
+
+## Banderas reales de Brasil, Cuba y Costa Rica (2026-09-03)
+El usuario pidió que los círculos de país en la lista de la Ruta (antes color plano de respaldo) mostraran la bandera real, como ya pasaba con Colombia/Perú/Chile. Agregadas 3 banderas SVG nuevas siguiendo el mismo patrón (`lib/flag-colors.ts` + `components/app/CountryFlag.tsx`): Brasil (verde, rombo amarillo, círculo azul), Cuba (5 franjas azul/blanco + triángulo rojo con estrella), Costa Rica (azul/blanco/rojo grueso/blanco/azul). Como `CountryFlag`/`paisTieneBandera` son el único punto de verdad usado en toda la app (Ruta, Perfil, etc.), el cambio se propaga solo a cualquier pantalla que ya use ese componente.
+
+### Verificación
+`npx tsc --noEmit` ✓ · `npm run build` ✓ · verificado con el bypass temporal de siempre (revertido, `git diff` limpio): las 3 banderas nuevas se ven correctas y reconocibles en la Ruta 2 (Ritmo y Trópico).
+
+## Nuevo reto: "Ahorcado de Capitales" (2026-09-03)
+El usuario pidió un nuevo modo de juego (aprobado el alcance antes de construir): ahorcado clásico con ciudades/capitales de TODO el mundo (no solo América), pista visible desde el inicio, 6 errores máximo.
+- **`lib/ahorcado-data.ts`** (nuevo): 38 ciudades/capitales reales verificadas, repartidas en los 5 continentes jugables (América, Europa, África, Asia, Oceanía), cada una con pista real distinta a la respuesta. `normalizarLetra()` quita tildes para que adivinar "A" también revele "Á" (más justo en español).
+- **`app/app/retos/ahorcado/page.tsx`** (nueva pantalla): dibujo de ahorcado en SVG que se revela progresivamente por error, teclado A-Z, pista siempre visible, victoria (+15 monedas, confetti, mismo patrón de celebración que el resto de la app) y derrota (revela la respuesta), "Jugar otra ciudad" para reintentar con otra palabra al azar.
+- **`app/app/retos/page.tsx`**: nueva tarjeta "Ahorcado de Capitales" junto al Reto de Cultura General.
+- No toca el progreso de países/rutas — es un modo de juego suelto, mismo patrón que el Reto de Cultura General (no persiste historial en Supabase).
+
+### Verificación
+`npx tsc --noEmit` ✓ · `npm run build` ✓ (22 rutas, incluida `/app/retos/ahorcado`). Jugado de punta a punta con el bypass temporal (revertido, `git diff` limpio): partida ganada (LISBOA, letras correctas, +15 monedas, confetti) ✓ y partida perdida (JOHANNESBURGO, 6 errores, revela la respuesta) ✓.
+**Bug real encontrado y corregido durante la verificación**: el dibujo del ahorcado no se veía — usé `var(--txt-tertiary)` (el nombre de la clase de Tailwind) en vez de la variable CSS real `--text-tertiary`; confirmado con el valor computado del navegador (`stroke: none`) antes de identificar la causa.
+**2do bug real (reportado por el usuario con captura)**: se me olvidó ocultar el `BottomNav` en esta pantalla (sí lo hice en la Ronda de juego, pero no aquí) — la barra flotante tapaba las últimas 2 filas del teclado (O-Z) y el muñeco quedaba con poco espacio. Corregido agregando `/app/retos/ahorcado` a `esRutaDeJuego()` en `components/app/shell/BottomNav.tsx`. Verificado con bypass (revertido): las 4 filas completas (A-Z) y el dibujo se ven sin ningún tapado.
+
+## Retos 1 a 1 contra amigos — real (2026-09-03)
+El usuario pidió construir la pieza que quedaba pendiente desde la Sesión 5 ("Los retos 1 a 1 contra amigos llegan muy pronto"), ahora que Supabase ya existe. Aprobado el alcance antes de construir.
+
+### Modelo de datos
+`supabase/migrations/0006_retos_1v1.sql` (aplicada): tabla `retos_1v1` (retador, retado —nullable hasta que se reclama—, los ÍNDICES de las preguntas usadas para que ambos jueguen EXACTAMENTE lo mismo, puntaje de cada uno, estado). RLS: solo los 2 participantes pueden hacer `select` directo (nunca se puede listar retos ajenos); crear un reto solo como uno mismo. Todo lo demás (ver un reto antes de aceptarlo, aceptar, completar) pasa por 3 RPCs `security definer` que validan la autorización por dentro: `ver_reto_1v1`, `aceptar_reto_1v1` (bloquea aceptar tu propio reto o uno ya reclamado por otro), `completar_reto_1v1` (bloquea que alguien que no es el retado marque el resultado).
+
+### Código
+- **`lib/trivia-cultura-general.ts`**: nuevas `preguntasCulturaGeneralConIndices()` (para el retador, guarda qué índices usó) y `preguntasPorIndices()` (reconstruye el mismo set para el retado).
+- **`app/app/retos/desafio/page.tsx`**: al terminar, ahora SÍ guarda un reto real en Supabase (antes el link de WhatsApp era solo texto, sin nada del otro lado). El botón de compartir espera a que el reto se guarde ("Preparando tu reto…") antes de habilitarse. De paso, corregido el mismo patrón de vacío muerto (centrado vertical) que ya se había corregido en otras pantallas de juego, pero se había pasado por alto aquí.
+- **`app/app/retos/1v1/[id]/page.tsx`** (nueva): maneja los 6 estados reales — cargando, no existe, es tu propio reto, ya lo reclamó otra persona, invitación (aceptar y jugar), jugando, resultado final (comparación de puntajes).
+- **`app/app/retos/page.tsx`**: reemplazado el aviso de "muy pronto" por 3 pestañas reales (Tu turno / Esperando respuesta / Historial) leyendo los retos de verdad del usuario.
+- **`components/app/shell/BottomNav.tsx`**: nav oculto también durante `/app/retos/1v1/[id]` (mismo criterio que el resto de pantallas de juego).
+- **`lib/supabase/middleware.ts` + `app/login/page.tsx`**: el login ahora recuerda a dónde iba la persona (`?next=`) — necesario para que alguien que abre un link de reto SIN sesión, tras loguearse, vuelva justo a ese reto en vez de caer siempre al Mapa.
+
+### Verificación
+`npx tsc --noEmit` ✓ · `npm run build` ✓ (23 rutas, incluida `/app/retos/1v1/[id]`) · `curl` confirma que `/login?next=%2Fapp%2Fretos%2F1v1%2Fabc123` preserva el destino correctamente.
+**Flujo completo probado contra la base de datos real** (usando los 3 usuarios reales que ya existen, simulando cada rol vía `set local request.jwt.claims`): usuario A crea un reto (4/5) → usuario B lo ve como invitación → usuario A intenta aceptar su propio reto → bloqueado (`es_tu_propio_reto`) → usuario B acepta → obtiene las mismas 5 preguntas → un tercer usuario intenta aceptar el mismo reto → bloqueado (`ya_reclamado`) → el tercero intenta marcar un resultado que no es suyo → bloqueado (`no_autorizado`) → usuario B completa con 5/5 → usuario A ve el resultado final con ambos puntajes (4 vs 5) ✓. Todos los datos de prueba fueron borrados al terminar.
+⚠️ No se pudo probar el flujo completo DENTRO del navegador con 2 sesiones reales simultáneas (necesitaría 2 correos distintos abiertos a la vez) — la lógica de negocio ya quedó 100% verificada contra la base de datos real, y las pantallas renderizan sin errores de consola en los estados que sí se pueden probar sin sesión.
+
 ## Pendiente de fondo (no de esta sesión)
 1. Rutas 2 y 3 (Brasil/Cuba/Costa Rica, México/EE.UU./Canadá) ya tienen banco de preguntas real (2026-09-02, 792 preguntas). Falta: bandera SVG animada y foto de portada tipo Colombia/Perú/Chile — sesión de assets aparte.
 2. El recordatorio diario es solo UI (no hay push notifications reales).

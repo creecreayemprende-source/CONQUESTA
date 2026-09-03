@@ -1,9 +1,9 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import { COLOMBIA_FLAG, CHILE_FLAG, PERU_FLAG } from "@/lib/flag-colors";
+import { COLOMBIA_FLAG, CHILE_FLAG, PERU_FLAG, BRASIL_FLAG, CUBA_FLAG, COSTARICA_FLAG } from "@/lib/flag-colors";
 
-type FlagKey = "Colombia" | "Perú" | "Chile";
+type FlagKey = "Colombia" | "Perú" | "Chile" | "Brasil" | "Cuba" | "Costa Rica";
 type SvgProps = { className?: string; ajuste: "xMidYMid slice" | "xMidYMid meet" };
 
 function ColombiaSvg({ className, ajuste }: SvgProps) {
@@ -40,16 +40,61 @@ function PeruSvg({ className, ajuste }: SvgProps) {
   );
 }
 
+function BrasilSvg({ className, ajuste }: SvgProps) {
+  return (
+    <svg viewBox="0 0 3 2" preserveAspectRatio={ajuste} className={className} aria-hidden="true">
+      <rect width="3" height="2" fill={BRASIL_FLAG.verde} />
+      <polygon fill={BRASIL_FLAG.amarillo} points="1.5,0.15 2.85,1 1.5,1.85 0.15,1" />
+      <circle cx="1.5" cy="1" r="0.55" fill={BRASIL_FLAG.azul} />
+    </svg>
+  );
+}
+
+function CubaSvg({ className, ajuste }: SvgProps) {
+  return (
+    <svg viewBox="0 0 3 2" preserveAspectRatio={ajuste} className={className} aria-hidden="true">
+      <rect width="3" height="0.4" y="0" fill={CUBA_FLAG.azul} />
+      <rect width="3" height="0.4" y="0.4" fill={CUBA_FLAG.blanco} />
+      <rect width="3" height="0.4" y="0.8" fill={CUBA_FLAG.azul} />
+      <rect width="3" height="0.4" y="1.2" fill={CUBA_FLAG.blanco} />
+      <rect width="3" height="0.4" y="1.6" fill={CUBA_FLAG.azul} />
+      <polygon fill={CUBA_FLAG.rojo} points="0,0 1.3,1 0,2" />
+      <polygon
+        fill={CUBA_FLAG.blanco}
+        points="0.42,0.66 0.463,0.793 0.603,0.793 0.49,0.876 0.533,1.009 0.42,0.926 0.307,1.009 0.35,0.876 0.237,0.793 0.377,0.793"
+      />
+    </svg>
+  );
+}
+
+function CostaRicaSvg({ className, ajuste }: SvgProps) {
+  return (
+    <svg viewBox="0 0 3 2" preserveAspectRatio={ajuste} className={className} aria-hidden="true">
+      <rect width="3" height="0.333" y="0" fill={COSTARICA_FLAG.azul} />
+      <rect width="3" height="0.333" y="0.333" fill={COSTARICA_FLAG.blanco} />
+      <rect width="3" height="0.667" y="0.667" fill={COSTARICA_FLAG.rojo} />
+      <rect width="3" height="0.333" y="1.333" fill={COSTARICA_FLAG.blanco} />
+      <rect width="3" height="0.334" y="1.666" fill={COSTARICA_FLAG.azul} />
+    </svg>
+  );
+}
+
 const BANDERAS: Record<FlagKey, (p: SvgProps) => React.JSX.Element> = {
   Colombia: ColombiaSvg,
   Perú: PeruSvg,
   Chile: ChileSvg,
+  Brasil: BrasilSvg,
+  Cuba: CubaSvg,
+  "Costa Rica": CostaRicaSvg,
 };
 
 const COLOR_FONDO: Record<FlagKey, string> = {
   Colombia: COLOMBIA_FLAG.azul,
   Perú: PERU_FLAG.rojo,
   Chile: CHILE_FLAG.rojo,
+  Brasil: BRASIL_FLAG.verde,
+  Cuba: CUBA_FLAG.azul,
+  "Costa Rica": COSTARICA_FLAG.azul,
 };
 
 /** ¿Ya existe una bandera real construida para este país? (hoy: Ruta 1). */

@@ -1,6 +1,7 @@
 "use client";
 
 import { use } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, Lock, Plane, Check, Medal, Crown } from "lucide-react";
@@ -156,6 +157,18 @@ export default function RutaPage({ params }: { params: Promise<{ rutaId: string 
         <p className="mt-4 text-center text-xs text-txt-tertiary">
           Conquista los 3 países en orden para ganar la insignia "{ruta.insignia}".
         </p>
+      )}
+
+      {ruta.mapaImagen && (
+        <div className="mx-auto mt-5 mb-4 w-full max-w-xs overflow-hidden rounded-2xl border border-border-default shadow-md">
+          <Image
+            src={ruta.mapaImagen}
+            alt={`Recorrido de la ruta ${ruta.nombre}`}
+            width={1024}
+            height={1536}
+            className="h-auto w-full"
+          />
+        </div>
       )}
     </div>
   );

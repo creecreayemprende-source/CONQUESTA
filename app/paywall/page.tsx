@@ -6,6 +6,8 @@ import { X, Check, ShieldCheck, Flame } from "lucide-react";
 import { AppStateProvider, useAppState } from "@/lib/app-state-context";
 import { iniciarTrial } from "@/lib/app-state";
 import { PAISES_AMERICA } from "@/lib/countries-data";
+import { supabaseBrowser } from "@/lib/supabase/client";
+import { iniciarTrialServidor } from "@/lib/supabase/queries";
 
 const BENEFICIOS = [
   "Todas las rutas y países de América",
@@ -33,11 +35,25 @@ function PaywallContent() {
   const paisesConquistados = PAISES_AMERICA.filter((p) => state.progresoPorPais[p.nombre]?.retoFinalCompletado).length;
   const yaConquistoColombia = state.progresoPorPais["Colombia"]?.retoFinalCompletado ?? false;
 
-  function empezarPrueba(planElegido: "anual" | "mensual") {
+  async function empezarPrueba(planElegido: "anual" | "mensual") {
     if (typeof window !== "undefined") {
       window.localStorage.setItem("plan_elegido", planElegido);
     }
-    setState((s) => iniciarTrial(s));
+    // Si ya hay sesión real (ej. reabrió el paywall desde dentro de la app ya
+    // logueado), el trial se activa server-side de una vez. Si todavía no se
+    // ha logueado (flujo normal onboarding→paywall→login), solo se marca
+    // localmente — se oficializa server-side en el primer login real
+    // (ver app-state-context.tsx, migración de progreso).
+    const supabase = supabaseBrowser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      const fechaReal = await iniciarTrialServidor(supabase);
+      setState((s) => ({ ...s, trialInicioFecha: fechaReal ?? s.trialInicioFecha }));
+    } else {
+      setState((s) => iniciarTrial(s));
+    }
     router.push("/app");
   }
 

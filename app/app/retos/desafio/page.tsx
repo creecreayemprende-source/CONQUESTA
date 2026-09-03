@@ -3,10 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, X as XIcon, Send, RotateCcw, ChevronLeft, Clock3 } from "lucide-react";
-import { preguntasCulturaGeneral } from "@/lib/trivia-cultura-general";
+import { preguntasCulturaGeneralConIndices } from "@/lib/trivia-cultura-general";
 import { useSound } from "@/lib/use-sound";
 import { Confetti } from "@/components/app/Confetti";
 import type { PreguntaTrivia } from "@/lib/onboarding-data";
+import { useAppState } from "@/lib/app-state-context";
+import { supabaseBrowser } from "@/lib/supabase/client";
 
 const URL_APP = "https://conquesta.app";
 
@@ -18,14 +20,18 @@ function formatearTiempo(segundos: number): string {
 
 export default function DesafioCulturaGeneralPage() {
   const router = useRouter();
+  const { state } = useAppState();
   const { playCorrect, playIncorrect, playVictoria } = useSound();
 
   // Igual que el resto del juego: Math.random() para barajar solo corre en el
   // cliente (useEffect), nunca en el initializer de useState, para evitar el
   // error de hidratación servidor/cliente.
   const [preguntas, setPreguntas] = useState<PreguntaTrivia[] | null>(null);
+  const [indices, setIndices] = useState<number[]>([]);
   useEffect(() => {
-    setPreguntas(preguntasCulturaGeneral());
+    const { preguntas: p, indices: i } = preguntasCulturaGeneralConIndices();
+    setPreguntas(p);
+    setIndices(i);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [index, setIndex] = useState(0);
@@ -33,7 +39,9 @@ export default function DesafioCulturaGeneralPage() {
   const [aciertos, setAciertos] = useState(0);
   const [terminado, setTerminado] = useState(false);
   const [segundosTranscurridos, setSegundosTranscurridos] = useState(0);
+  const [retoId, setRetoId] = useState<string | null>(null);
   const respondiendoRef = useRef(false);
+  const retoCreadoRef = useRef(false);
 
   // Cronómetro que sube — mide el tiempo TOTAL empleado en completar el reto
   // (no hay límite de tiempo por pregunta, a diferencia del resto del juego).
@@ -45,13 +53,45 @@ export default function DesafioCulturaGeneralPage() {
 
   function reiniciar() {
     respondiendoRef.current = false;
+    retoCreadoRef.current = false;
     setSelected(null);
     setAciertos(0);
     setIndex(0);
     setSegundosTranscurridos(0);
     setTerminado(false);
-    setPreguntas(preguntasCulturaGeneral());
+    setRetoId(null);
+    const { preguntas: p, indices: i } = preguntasCulturaGeneralConIndices();
+    setPreguntas(p);
+    setIndices(i);
   }
+
+  // Al terminar, se guarda un reto 1v1 real (para que el link de WhatsApp
+  // lleve a un duelo de verdad, no solo a un mensaje de texto) — una sola vez
+  // por partida jugada, con las MISMAS preguntas que respondió el retador.
+  useEffect(() => {
+    if (!terminado || !preguntas || retoCreadoRef.current) return;
+    retoCreadoRef.current = true;
+    (async () => {
+      const supabase = supabaseBrowser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return; // sin sesión (no debería pasar bajo /app, pero por si acaso)
+      const { data } = await supabase
+        .from("retos_1v1")
+        .insert({
+          retador_id: user.id,
+          retador_nombre: state.nombre,
+          pregunta_indices: indices,
+          total_preguntas: preguntas.length,
+          puntaje_retador: aciertos,
+        })
+        .select("id")
+        .single();
+      if (data) setRetoId(data.id as string);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [terminado]);
 
   function responder(i: number) {
     if (!preguntas || respondiendoRef.current || terminado) return;
@@ -89,12 +129,13 @@ export default function DesafioCulturaGeneralPage() {
   if (terminado) {
     const tiempoFormateado = formatearTiempo(segundosTranscurridos);
     const buenNivel = aciertos / preguntas.length >= 0.7;
+    const linkReto = retoId ? `${URL_APP}/app/retos/1v1/${retoId}` : URL_APP;
     const mensaje =
       `🏆 ¡Te desafío en Conquesta! 🌍\n` +
       `Acabo de completar el reto de ${preguntas.length} preguntas de Cultura General:\n` +
       `🎯 Resultado: ${aciertos}/${preguntas.length} correctas\n` +
       `⏱️ Tiempo: ${tiempoFormateado}\n` +
-      `¿Crees que puedes superarme? Acepta el reto aquí: ${URL_APP}`;
+      `¿Crees que puedes superarme? Acepta el reto — juegas las mismas preguntas: ${linkReto}`;
     const shareUrl = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
 
     return (
@@ -122,13 +163,16 @@ export default function DesafioCulturaGeneralPage() {
 
         <div className="flex w-full max-w-xs flex-col gap-3">
           <a
-            href={shareUrl}
+            href={retoId ? shareUrl : undefined}
+            aria-disabled={!retoId}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex h-14 items-center justify-center gap-2 rounded-lg bg-brand-primary font-display text-base font-bold text-white transition-transform duration-200 ease-out hover:-translate-y-0.5"
+            className={`flex h-14 items-center justify-center gap-2 rounded-lg bg-brand-primary font-display text-base font-bold text-white transition-transform duration-200 ease-out ${
+              retoId ? "hover:-translate-y-0.5" : "pointer-events-none opacity-60"
+            }`}
           >
             <Send className="h-4 w-4" strokeWidth={2.2} />
-            Retar a un amigo por WhatsApp
+            {retoId ? "Retar a un amigo por WhatsApp" : "Preparando tu reto…"}
           </a>
           <button
             type="button"
@@ -172,7 +216,7 @@ export default function DesafioCulturaGeneralPage() {
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col justify-center gap-6 py-6">
+      <div className="flex flex-1 flex-col gap-6 pb-6 pt-8">
         <p className="text-xs font-semibold text-brand-primary">{pregunta.categoria}</p>
         <h1 className="text-balance font-display text-2xl font-bold leading-tight text-txt-primary">
           {pregunta.pregunta}

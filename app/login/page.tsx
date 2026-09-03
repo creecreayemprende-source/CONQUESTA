@@ -1,14 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Mail } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 type Estado = "idle" | "enviando" | "enviado" | "error";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
+  // A dónde volver tras loguearse (ej. aceptar un reto 1v1 por link) —
+  // lo fija el middleware cuando redirige a /login sin sesión (ver
+  // lib/supabase/middleware.ts). Por defecto, /app (el Mapa).
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") ?? "/app";
   const [email, setEmail] = useState("");
   const [estado, setEstado] = useState<Estado>("idle");
   const [cooldown, setCooldown] = useState(0);
@@ -33,7 +47,7 @@ export default function LoginPage() {
     const supabase = supabaseBrowser();
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
     });
     if (error) {
       setEstado("error");
@@ -47,7 +61,7 @@ export default function LoginPage() {
     const supabase = supabaseBrowser();
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
     });
   }
 
@@ -117,7 +131,7 @@ export default function LoginPage() {
                 const supabase = supabaseBrowser();
                 await supabase.auth.signInWithOtp({
                   email,
-                  options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+                  options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
                 });
                 iniciarCooldown();
               }}

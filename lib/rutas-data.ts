@@ -4,13 +4,12 @@ export interface Ruta {
   tema: string;
   paises: string[]; // nombres de país en orden de juego
   insignia: string;
+  mapaImagen?: string; // ilustración del recorrido de la ruta (opcional)
 }
 
 /** Rutas temáticas de América (MVP, 2026-08-23). Jerarquía actualizada:
  * Continente → Ruta (3 por continente) → País → 6 Categorías → 3 Niveles → Reto Final.
- * Solo la Ruta 1 tiene contenido de preguntas real hoy (ver trivia-bank.ts);
- * las Rutas 2 y 3 existen como estructura/UI pero sus países siguen "Pro" sin
- * banco de preguntas — se completan en una sesión de contenido aparte. */
+ * Las 3 rutas de América ya tienen banco de preguntas real (ver trivia-bank.ts). */
 export const RUTAS_AMERICA: Ruta[] = [
   {
     id: "origen-andino",
@@ -18,6 +17,7 @@ export const RUTAS_AMERICA: Ruta[] = [
     tema: "Historia ancestral, picos andinos, gastronomía del Pacífico y paisajes del sur.",
     paises: ["Colombia", "Perú", "Chile"],
     insignia: "Pionero Andino",
+    mapaImagen: "/images/mapa-origen-andino.jpg",
   },
   {
     id: "ritmo-tropico",

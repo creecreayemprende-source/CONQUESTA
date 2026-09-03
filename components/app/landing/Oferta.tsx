@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
 
@@ -23,7 +26,15 @@ const featuresPro = [
   "7 días de prueba gratis",
 ];
 
+const PLANES = {
+  anual: { nombre: "Pro anual", nota: "Facturado una vez al año", precioMes: "$3.33", detalle: "Se cobra $39.99/año · ahorras 2 meses" },
+  mensual: { nombre: "Pro mensual", nota: "Facturado cada mes", precioMes: "$3.99", detalle: "Se cobra $3.99/mes · cancela cuando quieras" },
+} as const;
+
 export function Oferta() {
+  const [plan, setPlan] = useState<keyof typeof PLANES>("anual");
+  const activo = PLANES[plan];
+
   return (
     <section id="precios" className="px-6 py-16 md:py-20">
       <div className="mx-auto max-w-4xl">
@@ -77,12 +88,31 @@ export function Oferta() {
             <span className="absolute -top-3 left-6 rounded-full bg-brand-primary px-3 py-1 text-xs font-bold text-white">
               Recomendado
             </span>
-            <h3 className="font-display text-lg font-bold text-txt-primary">Pro anual</h3>
-            <p className="mt-1 text-sm text-txt-secondary">Facturado una vez al año</p>
+
+            {/* Selector real de plan (antes el mensual solo era una nota de
+                texto sin poder elegirlo) — mismo patrón que /paywall. */}
+            <div className="flex gap-1.5 rounded-full bg-surface-secondary p-1">
+              {(Object.keys(PLANES) as (keyof typeof PLANES)[]).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPlan(p)}
+                  className={`flex-1 rounded-full py-1.5 text-xs font-bold transition-colors duration-200 ease-out ${
+                    plan === p ? "bg-brand-primary text-white" : "text-txt-secondary"
+                  }`}
+                >
+                  {p === "anual" ? "Anual · ahorra 17%" : "Mensual"}
+                </button>
+              ))}
+            </div>
+
+            <h3 className="mt-4 font-display text-lg font-bold text-txt-primary">{activo.nombre}</h3>
+            <p className="mt-1 text-sm text-txt-secondary">{activo.nota}</p>
             <p className="mt-4 font-display text-3xl font-extrabold text-txt-primary tabular">
-              $3.33<span className="text-base font-medium text-txt-tertiary">/mes</span>
+              {activo.precioMes}
+              <span className="text-base font-medium text-txt-tertiary">/mes</span>
             </p>
-            <p className="text-xs text-txt-tertiary">Se cobra $39.99/año · ahorras 2 meses</p>
+            <p className="text-xs text-txt-tertiary">{activo.detalle}</p>
             <ul className="mt-5 space-y-2.5">
               {featuresPro.map((f) => (
                 <li key={f} className="flex items-center gap-2 text-sm text-txt-secondary">
@@ -97,9 +127,6 @@ export function Oferta() {
             >
               Conquistar gratis
             </Link>
-            <p className="mt-3 text-center text-xs text-txt-tertiary">
-              También disponible mensual: $3.99/mes
-            </p>
           </div>
         </div>
       </div>

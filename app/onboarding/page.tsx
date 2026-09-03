@@ -92,7 +92,11 @@ function OnboardingFlow() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col bg-surface-base">
       <ProgressHeader pct={pct} onBack={step > 0 && step < TOTAL_STEPS - 1 ? back : undefined} />
-      <div className="flex flex-1 flex-col justify-center px-4 py-6">
+      {/* Anclado arriba (no centrado en toda la pantalla) — centrar dejaba un
+          vacío muerto grande en los pasos de pregunta/trivia (hallazgo real
+          de la auditoría de diseño); los pasos de celebración ya traen su
+          propio espaciado vertical dentro de cada componente. */}
+      <div className="flex flex-1 flex-col px-4 pb-6 pt-8">
         {step === 0 && (
           <HookScreen
             onDone={(monedasGanadas, aciertos) => {

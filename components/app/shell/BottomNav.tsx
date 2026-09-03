@@ -17,9 +17,23 @@ const ITEMS = [
  * referencia): el item activo se eleva con una burbuja de color que se
  * desliza suavemente entre secciones (`layoutId` de Motion — "magic move"),
  * en vez del fondo plano de antes. Mismo set de íconos/labels/rutas. */
+// Rutas de juego cronometrado: el nav queda oculto para que un tap accidental
+// no saque a nadie de un reto a mitad de camino (hallazgo real de la auditoría
+// de UX — antes quedaba visible y tappeable durante la ronda/reto final).
+function esRutaDeJuego(pathname: string): boolean {
+  return (
+    pathname.startsWith("/app/jugar/") ||
+    pathname === "/app/retos/desafio" ||
+    pathname === "/app/retos/ahorcado" ||
+    pathname.startsWith("/app/retos/1v1/")
+  );
+}
+
 export function BottomNav() {
   const pathname = usePathname();
   const reducirMovimiento = useReducedMotion();
+
+  if (esRutaDeJuego(pathname)) return null;
 
   return (
     <div className="sticky bottom-0 z-10 px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-2">

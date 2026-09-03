@@ -11,7 +11,7 @@ const pasos = [
     numero: 2,
     icon: Swords,
     titulo: "Superas sus retos de cultura real",
-    texto: "Geografía, Historia, Cultura, Gastronomía y Naturaleza — niveles de 3-5 minutos, sin anuncios. Además, retas a tus amigos y comparas quién sabe más.",
+    texto: "Geografía, Historia, Cultura, Gastronomía, Naturaleza y Deportes — niveles de 3-5 minutos, sin anuncios. Además, retas a tus amigos y comparas quién sabe más.",
   },
   {
     numero: 3,
