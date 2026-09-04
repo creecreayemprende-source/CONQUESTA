@@ -647,6 +647,27 @@ El usuario pidió construir la pieza que quedaba pendiente desde la Sesión 5 ("
 **Flujo completo probado contra la base de datos real** (usando los 3 usuarios reales que ya existen, simulando cada rol vía `set local request.jwt.claims`): usuario A crea un reto (4/5) → usuario B lo ve como invitación → usuario A intenta aceptar su propio reto → bloqueado (`es_tu_propio_reto`) → usuario B acepta → obtiene las mismas 5 preguntas → un tercer usuario intenta aceptar el mismo reto → bloqueado (`ya_reclamado`) → el tercero intenta marcar un resultado que no es suyo → bloqueado (`no_autorizado`) → usuario B completa con 5/5 → usuario A ve el resultado final con ambos puntajes (4 vs 5) ✓. Todos los datos de prueba fueron borrados al terminar.
 ⚠️ No se pudo probar el flujo completo DENTRO del navegador con 2 sesiones reales simultáneas (necesitaría 2 correos distintos abiertos a la vez) — la lógica de negocio ya quedó 100% verificada contra la base de datos real, y las pantallas renderizan sin errores de consola en los estados que sí se pueden probar sin sesión.
 
+## Conquesta publicada: GitHub + Vercel (2026-09-03)
+- **GitHub**: repo creado por el usuario (`creecreayemprende-source/CONQUESTA`), commit inicial (37 archivos: auditoría + retos 1v1 + ahorcado + assets) subido a `main`.
+- **Vercel**: proyecto `conquesta` importado desde GitHub (team `premier-homes-app`). Primer deploy falló (faltaban `HOTMART_HOTTOK`/`SUPABASE_SERVICE_ROLE_KEY` — el build se niega a compilar sin ellas, mismo comportamiento fail-secure ya confirmado en local). Guiado el usuario paso a paso por el dashboard de Vercel (yo no tengo acceso de API a su cuenta — `list_teams`/`get_project` devuelven vacío/403) para agregar las 4 variables de entorno y relanzar el deploy.
+- **Variables de entorno en Vercel** (Production): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (reales, Type=Config) + `HOTMART_HOTTOK`, `SUPABASE_SERVICE_ROLE_KEY` (valores de relleno temporales, Type=Secret — reemplazar por los reales en la sesión de conectar Hotmart de verdad).
+- **URL en vivo**: `https://conquesta-eight.vercel.app` (dominios adicionales auto-generados por Vercel también activos).
+
+### Verificación
+`curl` directo a la URL en producción (sin pasar por el navegador del usuario): landing `200` ✓, `/login` `200` ✓, `/app` sin sesión → `307` a `/login` ✓ (la protección real de auth funciona igual en producción que en local).
+⚠️ Pendiente: dominio propio (ej. `conquesta.app`) — todavía usando el subdominio gratuito de Vercel. Se hace en la sesión de lanzamiento junto con Hotmart/Resend.
+
+## Bug real de login en producción: enlace de un solo uso "gastado" dos veces (2026-09-04)
+El usuario probó el login real desde su celular (Hotmail) contra `https://conquesta-eight.vercel.app` y, tras tocar el enlace del correo, volvía a la pantalla de "Entra a tu pasaporte" sin ningún aviso. Diagnosticado con los registros REALES de Supabase (`query_logs`, tabla `auth_logs`): el login SÍ se completó con éxito (`auth_event: login` a las 04:00:52) — pero el token de un solo uso se consumió más de una vez (Microsoft/Outlook prefetching el link por seguridad, y/o la persona tocándolo dos veces), así que un segundo intento con el mismo enlace fallaba con "One-time token not found", y nuestro callback redirigía a `/login?error=enlace_invalido` — un estado que la pantalla de login nunca mostraba.
+
+### Corregido en `app/login/page.tsx`
+1. **Si ya hay sesión real, entra directo** — al cargar, revisa `supabase.auth.getUser()`; si ya hay sesión (ej. un intento anterior del mismo enlace sí funcionó), redirige a `next` en vez de mostrarle otra vez el formulario de correo sin explicación.
+2. **Mensaje real cuando el enlace ya se usó o venció** — antes `?error=enlace_invalido` no mostraba nada; ahora hay un aviso claro explicando por qué pasó y qué hacer (usar "Reenviar" en vez de tocar el mismo enlace de nuevo).
+
+### Verificación
+`npx tsc --noEmit` ✓ · `npm run build` ✓ · en local: `/login` normal (sin sesión) muestra el formulario ✓; `/login?error=enlace_invalido` muestra el aviso nuevo ✓. Diagnóstico de causa raíz confirmado contra los logs reales de Supabase (no solo hipótesis) antes de escribir el fix.
+Cambio subido a GitHub → Vercel vuelve a desplegar automáticamente.
+
 ## Pendiente de fondo (no de esta sesión)
 1. Rutas 2 y 3 (Brasil/Cuba/Costa Rica, México/EE.UU./Canadá) ya tienen banco de preguntas real (2026-09-02, 792 preguntas). Falta: bandera SVG animada y foto de portada tipo Colombia/Perú/Chile — sesión de assets aparte.
 2. El recordatorio diario es solo UI (no hay push notifications reales).
