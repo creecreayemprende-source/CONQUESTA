@@ -7,7 +7,7 @@ const puntos = [
   },
   {
     icon: Frown,
-    texto: "Las apps de geografía gratis son solo un mapa y preguntas sueltas.",
+    texto: "Las apps de trivia gratis son preguntas sueltas sin ningún hilo — hoy una capital, mañana nada.",
   },
   {
     icon: Undo2,

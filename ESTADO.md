@@ -668,6 +668,15 @@ El usuario probó el login real desde su celular (Hotmail) contra `https://conqu
 `npx tsc --noEmit` ✓ · `npm run build` ✓ · en local: `/login` normal (sin sesión) muestra el formulario ✓; `/login?error=enlace_invalido` muestra el aviso nuevo ✓. Diagnóstico de causa raíz confirmado contra los logs reales de Supabase (no solo hipótesis) antes de escribir el fix.
 Cambio subido a GitHub → Vercel vuelve a desplegar automáticamente.
 
+## Consistencia de mensaje en toda la landing (2026-09-04)
+El usuario pidió revisar TODA la página de ventas para que el mensaje fuera consistente: 6 categorías (no solo geografía), empieza en América pero desbloquea todos los continentes, y los retos entretenidos hacen que el conocimiento se quede. Encontrado y corregido:
+- **`Hero.tsx`**: el subtítulo principal decía "geografía, historia, cultura, gastronomía y naturaleza" — le faltaba **Deportes** (el mismo bug de "5 categorías" que ya se había corregido en otros archivos, pero aquí no decía el número "5" así que el grep anterior no lo detectó). Reescrito para mencionar las 6, reforzar "empiezas por América y vas desbloqueando el resto de continentes", y "hacen que el conocimiento se te quede de verdad". Se agregó también una línea nueva bajo la tarjeta del mapa: "Europa, Asia, África y Oceanía se van desbloqueando a medida que avanzas".
+- **`Agitacion.tsx`** y **`Problema.tsx`**: las tarjetas de dolor decían "apps de geografía" (comparando a Conquesta solo contra competidores de geografía) — cambiado a "apps de trivia" para no implicar que Conquesta misma es solo geografía.
+- **`Solucion.tsx`**: el paso 2 ya listaba las 6 categorías correctamente, se le agregó "retos... entretenidos de verdad (no memorizar tarjetas), así el conocimiento se te queda" para reforzar el mensaje de retención.
+
+### Verificación
+`npx tsc --noEmit` ✓ · `npm run build` ✓ · confirmado en el navegador (375px): el nuevo subtítulo del Hero y la leyenda de continentes se ven correctos, consola sin errores. Grep final confirmó que las únicas menciones restantes de "geografía" en la landing la listan como 1 de 6 categorías, nunca como el tema único de la app.
+
 ## Pendiente de fondo (no de esta sesión)
 1. Rutas 2 y 3 (Brasil/Cuba/Costa Rica, México/EE.UU./Canadá) ya tienen banco de preguntas real (2026-09-02, 792 preguntas). Falta: bandera SVG animada y foto de portada tipo Colombia/Perú/Chile — sesión de assets aparte.
 2. El recordatorio diario es solo UI (no hay push notifications reales).

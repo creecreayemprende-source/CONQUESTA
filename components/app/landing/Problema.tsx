@@ -11,7 +11,7 @@ const preguntas = [
   },
   {
     icon: Frown,
-    texto: "¿Probaste apps de geografía y eran solo un mapa aburrido con preguntas sueltas?",
+    texto: "¿Probaste apps de trivia y eran solo un mapa aburrido con preguntas sueltas, sin ningún hilo?",
   },
   {
     icon: Undo2,

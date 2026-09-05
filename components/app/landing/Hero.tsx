@@ -15,8 +15,9 @@ export function Hero() {
         </h1>
 
         <p className="mt-5 max-w-xl text-base text-txt-secondary md:text-lg">
-          Recorre el mapa del mundo, supera retos reales de geografía, historia, cultura,
-          gastronomía y naturaleza — y sella tu pasaporte para siempre.
+          Recorre el mapa del mundo país por país — empiezas por América y vas desbloqueando
+          el resto de continentes — con retos entretenidos de geografía, historia, cultura,
+          gastronomía, naturaleza y deportes que hacen que el conocimiento se te quede de verdad.
         </p>
 
         <div className="mt-8 flex flex-col items-center gap-3">
@@ -57,6 +58,9 @@ export function Hero() {
               <Flag className="h-3.5 w-3.5" strokeWidth={2.2} />
             </span>
           </div>
+          <p className="mt-3 text-center text-xs text-txt-tertiary">
+            Europa, Asia, África y Oceanía se van desbloqueando a medida que avanzas
+          </p>
         </div>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-txt-secondary">
