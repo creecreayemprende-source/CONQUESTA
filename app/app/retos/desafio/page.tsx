@@ -10,8 +10,6 @@ import type { PreguntaTrivia } from "@/lib/onboarding-data";
 import { useAppState } from "@/lib/app-state-context";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
-const URL_APP = "https://conquesta.app";
-
 function formatearTiempo(segundos: number): string {
   const m = Math.floor(segundos / 60);
   const s = segundos % 60;
@@ -129,7 +127,11 @@ export default function DesafioCulturaGeneralPage() {
   if (terminado) {
     const tiempoFormateado = formatearTiempo(segundosTranscurridos);
     const buenNivel = aciertos / preguntas.length >= 0.7;
-    const linkReto = retoId ? `${URL_APP}/app/retos/1v1/${retoId}` : URL_APP;
+    // La dirección real de la app en este momento (no un dominio fijo escrito
+    // a mano) — así el link compartido siempre apunta a donde la app
+    // REALMENTE vive hoy, sin depender de que exista un dominio propio todavía.
+    const origen = typeof window !== "undefined" ? window.location.origin : "";
+    const linkReto = retoId ? `${origen}/app/retos/1v1/${retoId}` : origen;
     const mensaje =
       `🏆 ¡Te desafío en Conquesta! 🌍\n` +
       `Acabo de completar el reto de ${preguntas.length} preguntas de Cultura General:\n` +

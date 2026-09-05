@@ -683,7 +683,7 @@ Probando el reto 1v1 de verdad con el usuario, encontramos que al compartir por 
 ### Verificación
 `npx tsc --noEmit` ✓ · `npm run build` ✓. Pendiente que el usuario confirme en su iPhone que ahora sí llega el mensaje completo (no se puede probar el comportamiento real de la app de WhatsApp en iOS desde este entorno).
 
-⚠️ **Hallazgo adicional durante esta misma prueba**: el dominio `conquesta.app` (recién comprado por el usuario) **todavía no resuelve** (`curl` → no se pudo resolver el host) — significa que el link que se comparte por WhatsApp hoy apunta a una dirección que no existe todavía. Falta conectar el dominio al proyecto de Vercel (Vercel → Settings → Domains → Add `conquesta.app`) antes de que los links de reto compartidos funcionen de verdad.
+**Corrección de raíz**: el usuario aclaró que el dominio `conquesta.app` **todavía no se ha comprado** — el código ya tenía escrito ese dominio a mano (`const URL_APP = "https://conquesta.app"`) como si fuera el definitivo, desde antes de que existiera de verdad. Corregido en `app/app/retos/desafio/page.tsx`: el link del reto ahora se arma con `window.location.origin` (la dirección REAL donde vive la app en cada momento), igual que ya se hace en el login — así el link funciona hoy con `conquesta-eight.vercel.app` y, el día que se compre y conecte el dominio propio, se actualiza solo sin tocar código.
 
 ## Pendiente de fondo (no de esta sesión)
 1. Rutas 2 y 3 (Brasil/Cuba/Costa Rica, México/EE.UU./Canadá) ya tienen banco de preguntas real (2026-09-02, 792 preguntas). Falta: bandera SVG animada y foto de portada tipo Colombia/Perú/Chile — sesión de assets aparte.
