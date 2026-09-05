@@ -37,12 +37,17 @@ export interface Inventario {
 }
 
 export interface AppState {
-  v: 10;
+  v: 11;
   nombre: string;
   avatarUrl: string | null;
   recordatorioDiario: boolean;
   horaRecordatorio: string | null; // ej. "8:00 AM" — a qué hora quiere el aviso (elegida en onboarding o en Perfil)
   coins: number;
+  // Contador que SOLO sube — a diferencia de `coins` (el saldo, que baja al
+  // gastar en la Tienda), esto mide actividad real para el Ranking: alguien
+  // que juega mucho y gasta sus monedas en ayudas no debe verse "peor" que
+  // alguien que nunca las usa.
+  monedasGanadasTotal: number;
   gems: number;
   currentStreak: number;
   longestStreak: number;
@@ -62,7 +67,7 @@ export interface AppState {
   graceEndsAt: string | null; // ISO — hasta cuándo hay gracia si el pago falló
 }
 
-const KEY = "conquesta_app_state_v10";
+const KEY = "conquesta_app_state_v11";
 
 function rondaVacia(): RondaEstado {
   return { completado: false, aciertos: 0, total: 0 };
@@ -87,12 +92,13 @@ export function progresoPaisVacio(): ProgresoPais {
 // quedaría inconsistente con lo que el usuario en verdad jugó.
 function estadoInicial(): AppState {
   return {
-    v: 10,
+    v: 11,
     nombre: "Sofía",
     avatarUrl: null,
     recordatorioDiario: false,
     horaRecordatorio: null,
     coins: 0,
+    monedasGanadasTotal: 0,
     gems: 0,
     currentStreak: 0,
     longestStreak: 0,
@@ -119,7 +125,7 @@ export function loadAppState(): AppState {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return estadoInicial();
     const parsed = JSON.parse(raw);
-    if (parsed?.v !== 10) return estadoInicial();
+    if (parsed?.v !== 11) return estadoInicial();
     return parsed as AppState;
   } catch {
     return estadoInicial();
@@ -256,6 +262,7 @@ export function aplicarRecompensaOnboarding(
   return {
     ...conRacha,
     coins: conRacha.coins + monedasGanadas,
+    monedasGanadasTotal: conRacha.monedasGanadasTotal + monedasGanadas,
     categoriasFavoritas,
     recordatorioDiario: recordatorioActivado ?? conRacha.recordatorioDiario,
     horaRecordatorio: recordatorioActivado ? (horaRecordatorio ?? conRacha.horaRecordatorio) : conRacha.horaRecordatorio,

@@ -71,7 +71,11 @@ export default function AhorcadoPage() {
     if (ganado && !recompensaAplicada) {
       setRecompensaAplicada(true);
       playVictoria();
-      setState((s) => ({ ...s, coins: s.coins + RECOMPENSA_MONEDAS }));
+      setState((s) => ({
+        ...s,
+        coins: s.coins + RECOMPENSA_MONEDAS,
+        monedasGanadasTotal: s.monedasGanadasTotal + RECOMPENSA_MONEDAS,
+      }));
     }
   }, [ganado, recompensaAplicada, playVictoria, setState]);
 

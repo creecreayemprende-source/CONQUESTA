@@ -752,6 +752,21 @@ El usuario probó el reto 1v1 con un amigo real y reportó, con evidencia (captu
 `npx tsc --noEmit` ✓ · `npm run build` ✓ (limpio) · `/app` sin sesión → `307` en producción real. Los 2 triggers verificados con simulación SQL directa contra la base real (intento de retroceso bloqueado en ambas tablas, sin dejar datos de prueba). No se pudo recuperar el país de Dianita (no hay cómo saber con certeza si de verdad pasó el Reto Final o si nunca llegó a intentarlo) — se le debe pedir que lo intente de nuevo; con el fix, esta vez sí quedará guardado aunque cierre la app enseguida.
 Subido a GitHub → Vercel vuelve a desplegar automáticamente.
 
+## Monedas ganadas en total en el Ranking (2026-09-04)
+El usuario preguntó si era válido mostrar cuántas monedas lleva alguien en el Ranking. Se le explicó el matiz: el SALDO actual (`coins`) no sirve para un ranking porque baja al gastarlo en la Tienda — alguien que juega mucho pero también compra ayudas se vería "peor" que quien nunca gasta. Se propuso en cambio un contador de **monedas ganadas en total** (solo sube, nunca baja) y el usuario lo aprobó.
+
+### Implementado
+- **`lib/app-state.ts`** (bump v10→v11): campo nuevo `monedasGanadasTotal: number`, que se incrementa junto a `coins` en los 4 lugares donde de verdad se ganan monedas (onboarding, ronda, Reto Final, Ahorcado de Capitales) — nunca se toca en los lugares donde se gastan (Tienda, ayudas compradas a mitad de un reto).
+- **`lib/supabase/queries.ts`** + migración `0012_monedas_ganadas_total.sql` (aplicada en Supabase real): columna `monedas_ganadas_total` en `profiles`, incluida en el grant de columnas editables.
+- **Mismo candado anti-retroceso de la migración 0011**: un trigger nuevo en `profiles` impide que un guardado con datos viejos baje este contador — probado contra la base real (intento de bajarlo de 1460 a 5, bloqueado).
+- **`ranking_paises_conquistados`**: ahora también devuelve `monedas_ganadas_total` y lo usa como criterio de desempate (antes del nombre alfabético) cuando dos jugadores tienen los mismos países conquistados — resuelve de paso el caso que el usuario había notado ("Alex y Bruno" apareciendo primero solo por orden alfabético).
+- **`app/app/ranking/page.tsx`**: muestra las monedas totales (ícono dorado) junto a los países conquistados, tanto en el podio como en la lista.
+- Backfill único para los usuarios reales existentes: se igualó `monedas_ganadas_total` a su saldo actual de `coins` (no hay forma de recuperar lo que ya gastaron antes de este cambio, así que se usa el saldo actual como piso razonable).
+
+### Verificación
+`npx tsc --noEmit` ✓ · `npm run build` ✓ (limpio) · `/app` sin sesión → `307` en producción real. Confirmado contra la base real: la RPC ya devuelve `monedas_ganadas_total` correcto para los 4 perfiles reales, y el trigger anti-retroceso bloqueó un intento de bajarlo. La pantalla de Ranking en sí no se pudo probar con sesión real en este entorno (la RPC exige usuario autenticado) — el cambio de JSX sigue el mismo patrón ya verificado para el avatar.
+Subido a GitHub → Vercel vuelve a desplegar automáticamente.
+
 ## Pendiente de fondo (no de esta sesión)
 1. Rutas 2 y 3 (Brasil/Cuba/Costa Rica, México/EE.UU./Canadá) ya tienen banco de preguntas real (2026-09-02, 792 preguntas). Falta: bandera SVG animada y foto de portada tipo Colombia/Perú/Chile — sesión de assets aparte.
 2. El recordatorio diario y su hora ahora se guardan de verdad (perfil → notificaciones), pero sigue sin haber push notifications reales (avisos aunque el usuario tenga la app cerrada) — pendiente de un proveedor real (ej. OneSignal/Web Push) + un cron que revise horarios, en una sesión aparte.

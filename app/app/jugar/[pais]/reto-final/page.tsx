@@ -56,6 +56,7 @@ export default function RetoFinalPage({ params }: { params: Promise<{ pais: stri
       const conProgreso: typeof conRacha = {
         ...conRacha,
         coins: conRacha.coins + aciertosFinal * 5,
+        monedasGanadasTotal: conRacha.monedasGanadasTotal + aciertosFinal * 5,
         gems: conquistado ? conRacha.gems + 3 : conRacha.gems,
         progresoPorPais: {
           ...conRacha.progresoPorPais,

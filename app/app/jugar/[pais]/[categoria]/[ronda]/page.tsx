@@ -66,6 +66,7 @@ export default function JugarRondaPage({
       return {
         ...conRacha,
         coins: conRacha.coins + aciertosFinal * 5,
+        monedasGanadasTotal: conRacha.monedasGanadasTotal + aciertosFinal * 5,
         progresoPorPais: {
           ...conRacha.progresoPorPais,
           [pais]: {

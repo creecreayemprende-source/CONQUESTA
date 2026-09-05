@@ -30,6 +30,7 @@ interface ProfileRow {
   avatar_url: string | null;
   recordatorio_diario: boolean;
   hora_recordatorio: string | null;
+  monedas_ganadas_total: number;
 }
 
 interface RondaRow {
@@ -101,12 +102,13 @@ export async function fetchAppState(
       (paises ?? []).length === 0);
 
   const state: AppState = {
-    v: 10,
+    v: 11,
     nombre: p?.nombre ?? "Explorador",
     avatarUrl: p?.avatar_url ?? null,
     recordatorioDiario: p?.recordatorio_diario ?? false,
     horaRecordatorio: p?.hora_recordatorio ?? null,
     coins: p?.coins ?? 0,
+    monedasGanadasTotal: p?.monedas_ganadas_total ?? 0,
     gems: p?.gems ?? 0,
     currentStreak: p?.current_streak ?? 0,
     longestStreak: p?.longest_streak ?? 0,
@@ -151,6 +153,7 @@ export async function pushAppState(supabase: SupabaseClient, userId: string, sta
       avatar_url: state.avatarUrl,
       recordatorio_diario: state.recordatorioDiario,
       hora_recordatorio: state.horaRecordatorio,
+      monedas_ganadas_total: state.monedasGanadasTotal,
       updated_at: new Date().toISOString(),
     })
     .eq("id", userId);

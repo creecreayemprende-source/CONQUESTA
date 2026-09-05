@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Crown, Trophy } from "lucide-react";
+import { Crown, Trophy, Coins } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 interface FilaRanking {
   nombre: string;
   avatar_url: string | null;
+  monedas_ganadas_total: number;
   paises_conquistados: number;
   es_actual: boolean;
 }
@@ -124,6 +125,10 @@ export default function RankingPage() {
                     <p className="text-xs font-bold tabular text-txt-tertiary">
                       {j.paises_conquistados} país{j.paises_conquistados === 1 ? "" : "es"}
                     </p>
+                    <p className="flex items-center gap-0.5 text-xs font-semibold tabular text-gold">
+                      <Coins className="h-3 w-3" strokeWidth={2.4} />
+                      {j.monedas_ganadas_total}
+                    </p>
                     <div className={`flex flex-col items-center justify-start rounded-t-lg pt-1.5 ${cfg.color} ${cfg.barra}`}>
                       <span className="font-display text-xl font-extrabold text-white">{posicion}</span>
                     </div>
@@ -156,8 +161,14 @@ export default function RankingPage() {
                   <p className={`text-sm ${j.es_actual ? "font-bold text-txt-primary" : "font-medium text-txt-primary"}`}>
                     {j.es_actual ? "Tú" : j.nombre}
                   </p>
-                  <p className="text-xs text-txt-tertiary">
-                    {j.paises_conquistados} país{j.paises_conquistados === 1 ? "" : "es"} completados
+                  <p className="flex items-center gap-1.5 text-xs text-txt-tertiary">
+                    <span>
+                      {j.paises_conquistados} país{j.paises_conquistados === 1 ? "" : "es"} completados
+                    </span>
+                    <span className="flex items-center gap-0.5 font-semibold text-gold">
+                      <Coins className="h-3 w-3" strokeWidth={2.4} />
+                      {j.monedas_ganadas_total}
+                    </span>
                   </p>
                 </div>
               </div>
