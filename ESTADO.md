@@ -767,6 +767,18 @@ El usuario preguntó si era válido mostrar cuántas monedas lleva alguien en el
 `npx tsc --noEmit` ✓ · `npm run build` ✓ (limpio) · `/app` sin sesión → `307` en producción real. Confirmado contra la base real: la RPC ya devuelve `monedas_ganadas_total` correcto para los 4 perfiles reales, y el trigger anti-retroceso bloqueó un intento de bajarlo. La pantalla de Ranking en sí no se pudo probar con sesión real en este entorno (la RPC exige usuario autenticado) — el cambio de JSX sigue el mismo patrón ya verificado para el avatar.
 Subido a GitHub → Vercel vuelve a desplegar automáticamente.
 
+## Saldo de monedas visible en las preguntas + banco de Cultura General ampliado (2026-09-04)
+El usuario notó que las monedas del Mapa y del Ranking no coinciden — se le explicó que es a propósito (Mapa = saldo gastable, Ranking = ganado en total, nunca baja) y pidió, además, que el saldo se vea en cada pantalla de preguntas. También pidió ampliar el banco de preguntas del reto de Cultura General (20 preguntas por partida) para que casi nunca se repitan entre partidas — antes el banco tenía solo 30 preguntas (una repetición casi garantizada al jugar dos veces).
+
+### Implementado
+- **`components/app/SaldoMonedas.tsx`** (nuevo): chip reutilizable con ícono de monedas + el saldo actual, mismo estilo que los chips del Mapa.
+- Agregado en las 4 pantallas de preguntas: ronda de país (`[ronda]/page.tsx`), Reto Final (`reto-final/page.tsx`), el reto de Cultura General de quien lo crea (`retos/desafio/page.tsx`) y de quien lo acepta (`retos/1v1/[id]/page.tsx`) — así el jugador siempre sabe con cuánto cuenta antes de comprar una ayuda a mitad de un reto.
+- **`lib/trivia-cultura-general.ts`**: banco ampliado de 30 → **195 preguntas** (verificadas, con fuente citada, repartidas en las 6 categorías), para que un reto de 20 preguntas casi nunca repita la misma tanda entre partidas.
+
+### Verificación
+`npx tsc --noEmit` ✓ · `npm run build` ✓ (limpio) · `/app` sin sesión → `307` en producción real. Script de sanidad sobre el banco nuevo: 195 preguntas, 0 duplicadas, todas con 4 opciones y el índice de respuesta correcto dentro de rango. Confirmado en el navegador (con datos simulados) que el chip de saldo aparece y muestra el valor real en las 3 pantallas de preguntas probadas (ronda, Reto Final, desafío de Cultura General).
+Subido a GitHub → Vercel vuelve a desplegar automáticamente.
+
 ## Pendiente de fondo (no de esta sesión)
 1. Rutas 2 y 3 (Brasil/Cuba/Costa Rica, México/EE.UU./Canadá) ya tienen banco de preguntas real (2026-09-02, 792 preguntas). Falta: bandera SVG animada y foto de portada tipo Colombia/Perú/Chile — sesión de assets aparte.
 2. El recordatorio diario y su hora ahora se guardan de verdad (perfil → notificaciones), pero sigue sin haber push notifications reales (avisos aunque el usuario tenga la app cerrada) — pendiente de un proveedor real (ej. OneSignal/Web Push) + un cron que revise horarios, en una sesión aparte.

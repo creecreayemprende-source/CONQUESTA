@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, X as XIcon, Send, RotateCcw, ChevronLeft, Clock3 } from "lucide-react";
+import { SaldoMonedas } from "@/components/app/SaldoMonedas";
 import { preguntasCulturaGeneralConIndices } from "@/lib/trivia-cultura-general";
 import { useSound } from "@/lib/use-sound";
 import { Confetti } from "@/components/app/Confetti";
@@ -220,6 +221,10 @@ export default function DesafioCulturaGeneralPage() {
           <Clock3 className="h-3.5 w-3.5" strokeWidth={2.4} />
           {formatearTiempo(segundosTranscurridos)}
         </span>
+      </div>
+
+      <div className="mt-2 flex justify-end">
+        <SaldoMonedas monedas={state.coins} />
       </div>
 
       <div className="flex flex-1 flex-col gap-6 pb-6 pt-8">

@@ -3,6 +3,7 @@
 import { use, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, X as XIcon, RotateCcw, Scissors, Clock3, Lightbulb, ChevronLeft } from "lucide-react";
+import { SaldoMonedas } from "@/components/app/SaldoMonedas";
 import { useAppState } from "@/lib/app-state-context";
 import { registrarActividad, rondaAprobada, progresoDePais } from "@/lib/app-state";
 import { AYUDAS_CONFIG } from "@/lib/ayudas";
@@ -272,6 +273,7 @@ export default function JugarRondaPage({
         <p className="flex-1 text-center text-xs font-semibold uppercase tracking-wide text-txt-tertiary">
           {ronda} · {categoria} · {index + 1}/{preguntas.length}
         </p>
+        <SaldoMonedas monedas={state.coins} />
         <div className="relative flex h-16 w-16 shrink-0 items-center justify-center">
           <svg width="64" height="64" className="-rotate-90">
             <circle cx="32" cy="32" r="27" stroke="var(--border-default)" strokeWidth="5" fill="none" />

@@ -7,6 +7,8 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import { preguntasPorIndices } from "@/lib/trivia-cultura-general";
 import { useSound } from "@/lib/use-sound";
 import { Confetti } from "@/components/app/Confetti";
+import { SaldoMonedas } from "@/components/app/SaldoMonedas";
+import { useAppState } from "@/lib/app-state-context";
 import type { PreguntaTrivia } from "@/lib/onboarding-data";
 
 function formatearTiempo(segundos: number): string {
@@ -41,6 +43,7 @@ type Vista =
 export default function Reto1v1Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const { state } = useAppState();
   const { playCorrect, playIncorrect, playVictoria } = useSound();
 
   const [vista, setVista] = useState<Vista>("cargando");
@@ -252,6 +255,10 @@ export default function Reto1v1Page({ params }: { params: Promise<{ id: string }
             <Clock3 className="h-3.5 w-3.5" strokeWidth={2.4} />
             {formatearTiempo(segundosTranscurridos)}
           </span>
+        </div>
+
+        <div className="mt-2 flex justify-end">
+          <SaldoMonedas monedas={state.coins} />
         </div>
 
         <div className="flex flex-1 flex-col gap-6 pb-6 pt-8">
