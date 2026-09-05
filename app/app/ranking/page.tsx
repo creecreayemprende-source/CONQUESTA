@@ -7,6 +7,7 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 
 interface FilaRanking {
   nombre: string;
+  avatar_url: string | null;
   paises_conquistados: number;
   es_actual: boolean;
 }
@@ -108,11 +109,16 @@ export default function RankingPage() {
                   <div key={j.nombre + posicion} className="flex flex-col items-center gap-1.5">
                     {posicion === 1 && <Crown className="h-5 w-5 text-gold" strokeWidth={2.2} fill="currentColor" />}
                     <span
-                      className={`flex shrink-0 items-center justify-center rounded-full font-display font-bold text-white ${cfg.color} ${cfg.avatar} ${
+                      className={`flex shrink-0 items-center justify-center overflow-hidden rounded-full font-display font-bold text-white ${cfg.color} ${cfg.avatar} ${
                         j.es_actual ? "ring-2 ring-brand-primary ring-offset-2 ring-offset-surface-primary" : ""
                       }`}
                     >
-                      {(j.es_actual ? "Tú" : j.nombre).charAt(0)}
+                      {j.avatar_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- foto subida por el jugador, no un asset local optimizable.
+                        <img src={j.avatar_url} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        (j.es_actual ? "Tú" : j.nombre).charAt(0)
+                      )}
                     </span>
                     <p className="max-w-16 truncate text-xs font-semibold text-txt-primary">{j.es_actual ? "Tú" : j.nombre}</p>
                     <p className="text-xs font-bold tabular text-txt-tertiary">
@@ -135,11 +141,16 @@ export default function RankingPage() {
               >
                 <span className="w-5 text-sm font-bold tabular text-txt-tertiary">{(filas.length >= 3 ? 4 : 1) + i}</span>
                 <span
-                  className={`flex h-9 w-9 items-center justify-center rounded-full font-display text-xs font-bold text-white ${
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full font-display text-xs font-bold text-white ${
                     j.es_actual ? "bg-brand-primary" : "bg-status-locked"
                   }`}
                 >
-                  {(j.es_actual ? "Tú" : j.nombre).charAt(0)}
+                  {j.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- foto subida por el jugador, no un asset local optimizable.
+                    <img src={j.avatar_url} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    (j.es_actual ? "Tú" : j.nombre).charAt(0)
+                  )}
                 </span>
                 <div className="flex-1">
                   <p className={`text-sm ${j.es_actual ? "font-bold text-txt-primary" : "font-medium text-txt-primary"}`}>

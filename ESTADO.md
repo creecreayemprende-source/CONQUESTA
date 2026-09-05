@@ -717,6 +717,18 @@ El usuario preguntó, muy bien visto: cuando en el onboarding se elige una hora 
 `npx tsc --noEmit` ✓ · `npm run build` ✓ (limpio) · `/app` sin sesión → `307` en build de producción real (bypass de auditoría revertido y confirmado sin diff). En navegador: activar el interruptor muestra el selector de hora; elegir "1:00 PM" lo guarda de inmediato en el estado (`localStorage` → luego sincroniza a Supabase igual que el resto del perfil) — confirmado leyendo el estado real tras el clic (`horaRecordatorio: "1:00 PM"`).
 Subido a GitHub → Vercel vuelve a desplegar automáticamente.
 
+## La foto de perfil ahora se ve en el Mapa y en el Ranking (2026-09-04)
+El usuario notó (correctamente) que ya podía subir su foto en Perfil, pero seguía sin verse en el Mapa (arriba, junto al saludo "Hola, [nombre]") ni en el Ranking (junto a su nombre y al de los demás jugadores). Ambas pantallas seguían mostrando solo la inicial del nombre en un círculo de color — nunca leían `avatarUrl`.
+
+### Implementado
+- **`components/app/shell/TopBar.tsx`** (usado en el Mapa): el círculo junto al saludo ahora muestra la foto real si existe, igual que ya hacía Perfil.
+- **`app/app/ranking/page.tsx`**: tanto el podio (top 3) como la lista de abajo ahora muestran la foto real de cada jugador (la propia y la de los demás) cuando la tienen — la RPC de ranking no traía esa columna, así que también se actualizó el backend.
+- **Migración `0009_ranking_con_avatar.sql`** (aplicada en Supabase real): la función `ranking_paises_conquistados` ahora también devuelve `avatar_url` de cada jugador.
+
+### Verificación
+`npx tsc --noEmit` ✓ · `npm run build` ✓ (limpio) · `/app` sin sesión → `307` en producción real. Confirmado contra la base de datos real (`execute_sql`) que la función ya devuelve `avatar_url` correctamente para los 2 usuarios reales que ya subieron foto ("Dianita", "Alex y Bruno"). En el Mapa, confirmé en el navegador que al simular una URL de foto en el estado, el círculo del saludo muestra la imagen en vez de la inicial. La pantalla de Ranking en sí no se pudo probar con sesión real en este entorno (la función RPC requiere un usuario autenticado, y aquí no hay forma de iniciar sesión real) — el cambio de código sigue exactamente el mismo patrón ya verificado en Mapa/Perfil (mismo `if (avatarUrl) <img> else inicial`), y el dato que consume viene confirmado correcto desde la base de datos.
+Subido a GitHub → Vercel vuelve a desplegar automáticamente.
+
 ## Pendiente de fondo (no de esta sesión)
 1. Rutas 2 y 3 (Brasil/Cuba/Costa Rica, México/EE.UU./Canadá) ya tienen banco de preguntas real (2026-09-02, 792 preguntas). Falta: bandera SVG animada y foto de portada tipo Colombia/Perú/Chile — sesión de assets aparte.
 2. El recordatorio diario y su hora ahora se guardan de verdad (perfil → notificaciones), pero sigue sin haber push notifications reales (avisos aunque el usuario tenga la app cerrada) — pendiente de un proveedor real (ej. OneSignal/Web Push) + un cron que revise horarios, en una sesión aparte.

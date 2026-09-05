@@ -15,8 +15,13 @@ export function TopBar({ state }: { state: AppState }) {
     <div className="flex flex-col gap-2 px-4 pb-2 pt-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-primary font-display text-sm font-bold text-white">
-            {state.nombre.charAt(0)}
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-primary font-display text-sm font-bold text-white">
+            {state.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- foto subida por el usuario, no un asset local optimizable.
+              <img src={state.avatarUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              state.nombre.charAt(0)
+            )}
           </span>
           <span className="font-display text-base font-bold text-txt-primary">Hola, {state.nombre}</span>
         </div>
