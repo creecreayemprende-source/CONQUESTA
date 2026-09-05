@@ -779,6 +779,13 @@ El usuario notó que las monedas del Mapa y del Ranking no coinciden — se le e
 `npx tsc --noEmit` ✓ · `npm run build` ✓ (limpio) · `/app` sin sesión → `307` en producción real. Script de sanidad sobre el banco nuevo: 195 preguntas, 0 duplicadas, todas con 4 opciones y el índice de respuesta correcto dentro de rango. Confirmado en el navegador (con datos simulados) que el chip de saldo aparece y muestra el valor real en las 3 pantallas de preguntas probadas (ronda, Reto Final, desafío de Cultura General).
 Subido a GitHub → Vercel vuelve a desplegar automáticamente.
 
+## Banco del Ahorcado de Capitales ampliado (2026-09-05)
+El usuario pidió más variedad en el Ahorcado de Capitales — el banco tenía solo 38 ciudades. Ampliado a **100 ciudades/capitales** reales verificadas, con pista distinta al nombre (nunca la revela), repartidas en los 5 continentes (América, Europa, África, Asia, Oceanía) para mantener el balance.
+
+### Verificación
+`npx tsc --noEmit` ✓ · `npm run build` ✓ (limpio) · `/app` sin sesión → `307` en producción real. Script de sanidad: 100 entradas, 0 nombres duplicados. Confirmado en el navegador (bypass temporal) que el juego sigue funcionando con el banco ampliado; confirmado por código que los espacios de las ciudades de varias palabras (ej. "CIUDAD DE PANAMÁ", "PUERTO PRÍNCIPE") se muestran automáticamente sin contar como letra a adivinar (mismo patrón ya usado por las ciudades de varias palabras que ya existían).
+Subido a GitHub → Vercel vuelve a desplegar automáticamente.
+
 ## Pendiente de fondo (no de esta sesión)
 1. Rutas 2 y 3 (Brasil/Cuba/Costa Rica, México/EE.UU./Canadá) ya tienen banco de preguntas real (2026-09-02, 792 preguntas). Falta: bandera SVG animada y foto de portada tipo Colombia/Perú/Chile — sesión de assets aparte.
 2. El recordatorio diario y su hora ahora se guardan de verdad (perfil → notificaciones), pero sigue sin haber push notifications reales (avisos aunque el usuario tenga la app cerrada) — pendiente de un proveedor real (ej. OneSignal/Web Push) + un cron que revise horarios, en una sesión aparte.
