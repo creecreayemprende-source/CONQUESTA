@@ -27,6 +27,8 @@ interface ProfileRow {
   membership_status: MembershipStatus;
   access_until: string | null;
   grace_ends_at: string | null;
+  avatar_url: string | null;
+  recordatorio_diario: boolean;
 }
 
 interface RondaRow {
@@ -98,8 +100,10 @@ export async function fetchAppState(
       (paises ?? []).length === 0);
 
   const state: AppState = {
-    v: 8,
+    v: 9,
     nombre: p?.nombre ?? "Explorador",
+    avatarUrl: p?.avatar_url ?? null,
+    recordatorioDiario: p?.recordatorio_diario ?? false,
     coins: p?.coins ?? 0,
     gems: p?.gems ?? 0,
     currentStreak: p?.current_streak ?? 0,
@@ -142,6 +146,8 @@ export async function pushAppState(supabase: SupabaseClient, userId: string, sta
       inventario_cincuenta: state.inventario.cincuenta,
       inventario_tiempo_extra: state.inventario.tiempoExtra,
       inventario_pista: state.inventario.pista,
+      avatar_url: state.avatarUrl,
+      recordatorio_diario: state.recordatorioDiario,
       updated_at: new Date().toISOString(),
     })
     .eq("id", userId);

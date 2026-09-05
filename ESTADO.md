@@ -685,7 +685,27 @@ Probando el reto 1v1 de verdad con el usuario, encontramos que al compartir por 
 
 **Corrección de raíz**: el usuario aclaró que el dominio `conquesta.app` **todavía no se ha comprado** — el código ya tenía escrito ese dominio a mano (`const URL_APP = "https://conquesta.app"`) como si fuera el definitivo, desde antes de que existiera de verdad. Corregido en `app/app/retos/desafio/page.tsx`: el link del reto ahora se arma con `window.location.origin` (la dirección REAL donde vive la app en cada momento), igual que ya se hace en el login — así el link funciona hoy con `conquesta-eight.vercel.app` y, el día que se compre y conecte el dominio propio, se actualiza solo sin tocar código.
 
+## Perfil personalizable: nombre, foto y notificaciones reales (2026-09-04)
+El usuario pidió: poder elegir cómo lo llama la app, subir una foto de perfil en Pantalla de Perfil, y que "Ajustes de notificaciones" (antes un botón muerto que no hacía nada) sirviera para algo real.
+
+### Backend (migración `0007_avatar_y_notificaciones.sql`, aplicada en Supabase real)
+- Columnas nuevas en `profiles`: `avatar_url text`, `recordatorio_diario boolean default false`.
+- Grant de columnas editables por el usuario ampliado para incluir ambas (patrón ya usado en todo el proyecto: el usuario solo puede tocar sus columnas de juego, nunca plan/membresía).
+- Bucket nuevo de Storage `avatars` (público para lectura) con 4 políticas RLS por carpeta (`storage.foldername(name)[1] = auth.uid()`): cada usuario solo puede subir/actualizar/borrar dentro de su propia carpeta. Verificado con simulación directa de RLS (JWT de un usuario real): insertar en la carpeta de OTRO usuario → bloqueado (`42501`); insertar en la propia → funciona.
+
+### Frontend
+- **`lib/app-state.ts`** (bump v8→v9): `avatarUrl: string | null` y `recordatorioDiario: boolean` agregados a `AppState`; `aplicarRecompensaOnboarding` ahora también recibe `recordatorioActivado` (el switch que ya existía dentro del onboarding ahora sí se guarda).
+- **`lib/supabase/queries.ts`**: `fetchAppState`/`pushAppState` leen y escriben ambas columnas nuevas.
+- **`lib/supabase/storage.ts`** (nuevo): `subirAvatar()` — sube el archivo a `avatars/{userId}/avatar.{ext}` con `upsert:true` (reemplaza la foto anterior en vez de acumular archivos) y devuelve la URL pública con cache-busting (`?v=timestamp`).
+- **`app/app/perfil/page.tsx`**: el círculo de avatar ahora es un botón — si hay `avatarUrl` muestra la foto, si no, la inicial del nombre; al tocarlo abre el selector de archivos, sube la foto y actualiza el estado. El nombre es editable in-place (tap → input con máx. 24 caracteres → check para guardar). "Ajustes de notificaciones" pasó de `<button>` muerto a `<Link href="/app/perfil/notificaciones">` real.
+- **`app/app/perfil/notificaciones/page.tsx`** (nueva pantalla): un switch real de "Recordatorio diario" ligado a `state.recordatorioDiario`, con nota honesta explicando que por ahora guarda la preferencia dentro de la app (las notificaciones push reales aún no existen — no se le prometió al usuario algo que no se cumple).
+- **`app/onboarding/page.tsx`**: el switch de recordatorio que ya existía en el onboarding ahora sí llega hasta `AppState` (antes se preguntaba pero no se guardaba en ningún lado).
+
+### Verificación
+`npx tsc --noEmit` ✓ · `npm run build` ✓ (limpio, 23 rutas incluida `/app/perfil/notificaciones`) · `/app` sin sesión → `307` a `/login` confirmado en build de producción real (bypass temporal de auditoría revertido y confirmado sin diff antes de este build). En navegador: edición de nombre confirmada de punta a punta (tap → input → "Camilo" → botón se actualiza); switch de notificaciones confirmado (`aria-checked` pasa de `false` a `true` al tocar); lógica de avatar confirmada simulando `avatarUrl` con una URL de prueba en `localStorage` y recargando — la foto reemplaza correctamente la inicial. La subida real de un archivo de imagen de punta a punta (seleccionar del disco → Storage real → verse en pantalla) no se probó en este entorno (no hay forma de simular un `<input type="file">` real sin un archivo del usuario) — el camino de datos (RLS, `upsert`, URL pública) sí está verificado contra la base real.
+Subido a GitHub → Vercel vuelve a desplegar automáticamente.
+
 ## Pendiente de fondo (no de esta sesión)
 1. Rutas 2 y 3 (Brasil/Cuba/Costa Rica, México/EE.UU./Canadá) ya tienen banco de preguntas real (2026-09-02, 792 preguntas). Falta: bandera SVG animada y foto de portada tipo Colombia/Perú/Chile — sesión de assets aparte.
-2. El recordatorio diario es solo UI (no hay push notifications reales).
+2. El recordatorio diario ahora se guarda de verdad (perfil → notificaciones), pero sigue sin haber push notifications reales (avisos aunque el usuario tenga la app cerrada) — pendiente de un proveedor real (ej. OneSignal/Web Push) en una sesión aparte.
 3. Europa, Asia, África y Oceanía siguen sin banco de preguntas (solo datos de ruta/país para el modal de continente bloqueado). Antártida tiene su reencuadre de categorías ya decidido y anotado (ver sección de arriba) para cuando llegue su turno.

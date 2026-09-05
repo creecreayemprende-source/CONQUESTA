@@ -37,8 +37,10 @@ export interface Inventario {
 }
 
 export interface AppState {
-  v: 8;
+  v: 9;
   nombre: string;
+  avatarUrl: string | null;
+  recordatorioDiario: boolean;
   coins: number;
   gems: number;
   currentStreak: number;
@@ -59,7 +61,7 @@ export interface AppState {
   graceEndsAt: string | null; // ISO — hasta cuándo hay gracia si el pago falló
 }
 
-const KEY = "conquesta_app_state_v8";
+const KEY = "conquesta_app_state_v9";
 
 function rondaVacia(): RondaEstado {
   return { completado: false, aciertos: 0, total: 0 };
@@ -84,8 +86,10 @@ export function progresoPaisVacio(): ProgresoPais {
 // quedaría inconsistente con lo que el usuario en verdad jugó.
 function estadoInicial(): AppState {
   return {
-    v: 8,
+    v: 9,
     nombre: "Sofía",
+    avatarUrl: null,
+    recordatorioDiario: false,
     coins: 0,
     gems: 0,
     currentStreak: 0,
@@ -113,7 +117,7 @@ export function loadAppState(): AppState {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return estadoInicial();
     const parsed = JSON.parse(raw);
-    if (parsed?.v !== 8) return estadoInicial();
+    if (parsed?.v !== 9) return estadoInicial();
     return parsed as AppState;
   } catch {
     return estadoInicial();
@@ -233,11 +237,20 @@ export function registrarActividad(state: AppState, hoy: string): AppState {
  * cuando el usuario llegaba al Mapa. */
 export function aplicarRecompensaOnboarding(
   state: AppState,
-  { monedasGanadas, categoriasFavoritas }: { monedasGanadas: number; categoriasFavoritas: Categoria[] }
+  {
+    monedasGanadas,
+    categoriasFavoritas,
+    recordatorioActivado,
+  }: { monedasGanadas: number; categoriasFavoritas: Categoria[]; recordatorioActivado?: boolean }
 ): AppState {
   const hoy = new Date().toISOString().slice(0, 10);
   const conRacha = registrarActividad(state, hoy);
-  return { ...conRacha, coins: conRacha.coins + monedasGanadas, categoriasFavoritas };
+  return {
+    ...conRacha,
+    coins: conRacha.coins + monedasGanadas,
+    categoriasFavoritas,
+    recordatorioDiario: recordatorioActivado ?? conRacha.recordatorioDiario,
+  };
 }
 
 const DURACION_TRIAL_DIAS = 7;

@@ -84,6 +84,7 @@ function OnboardingFlow() {
       aplicarRecompensaOnboarding(s, {
         monedasGanadas: state.monedasGanadas ?? 0,
         categoriasFavoritas: state.categoriasFavoritas ?? [],
+        recordatorioActivado: state.recordatorioActivado,
       })
     );
     router.push("/app");
