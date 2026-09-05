@@ -677,6 +677,14 @@ El usuario pidió revisar TODA la página de ventas para que el mensaje fuera co
 ### Verificación
 `npx tsc --noEmit` ✓ · `npm run build` ✓ · confirmado en el navegador (375px): el nuevo subtítulo del Hero y la leyenda de continentes se ven correctos, consola sin errores. Grep final confirmó que las únicas menciones restantes de "geografía" en la landing la listan como 1 de 6 categorías, nunca como el tema único de la app.
 
+## Bug real de WhatsApp: solo llegaba el link, sin el texto (2026-09-04)
+Probando el reto 1v1 de verdad con el usuario, encontramos que al compartir por WhatsApp desde su iPhone, el mensaje que llegaba al chat era SOLO el link — sin el emoji, el puntaje, el tiempo ni la invitación. Confirmado que la construcción del mensaje/URL en nuestro código era correcta (probado el `encodeURIComponent` exacto, 477 caracteres, bien formado) — la causa es un comportamiento conocido de `wa.me`: ese dominio es un acortador que redirige a `api.whatsapp.com/send`, y en algunos iPhones ese salto de redirección pierde el parámetro `text` y solo deja pasar el link. Corregido en `app/app/retos/desafio/page.tsx`: se cambió a `https://api.whatsapp.com/send?text=...` directo, sin pasar por el redirector.
+
+### Verificación
+`npx tsc --noEmit` ✓ · `npm run build` ✓. Pendiente que el usuario confirme en su iPhone que ahora sí llega el mensaje completo (no se puede probar el comportamiento real de la app de WhatsApp en iOS desde este entorno).
+
+⚠️ **Hallazgo adicional durante esta misma prueba**: el dominio `conquesta.app` (recién comprado por el usuario) **todavía no resuelve** (`curl` → no se pudo resolver el host) — significa que el link que se comparte por WhatsApp hoy apunta a una dirección que no existe todavía. Falta conectar el dominio al proyecto de Vercel (Vercel → Settings → Domains → Add `conquesta.app`) antes de que los links de reto compartidos funcionen de verdad.
+
 ## Pendiente de fondo (no de esta sesión)
 1. Rutas 2 y 3 (Brasil/Cuba/Costa Rica, México/EE.UU./Canadá) ya tienen banco de preguntas real (2026-09-02, 792 preguntas). Falta: bandera SVG animada y foto de portada tipo Colombia/Perú/Chile — sesión de assets aparte.
 2. El recordatorio diario es solo UI (no hay push notifications reales).

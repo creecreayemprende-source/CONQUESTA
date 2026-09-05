@@ -136,7 +136,10 @@ export default function DesafioCulturaGeneralPage() {
       `🎯 Resultado: ${aciertos}/${preguntas.length} correctas\n` +
       `⏱️ Tiempo: ${tiempoFormateado}\n` +
       `¿Crees que puedes superarme? Acepta el reto — juegas las mismas preguntas: ${linkReto}`;
-    const shareUrl = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+    // api.whatsapp.com directo (no wa.me): en algunos iPhones el salto de
+    // redirección de wa.me pierde el parámetro de texto y solo llega el link
+    // — hallazgo real reportado por el usuario, api.whatsapp.com lo evita.
+    const shareUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(mensaje)}`;
 
     return (
       <div className="relative flex min-h-dvh flex-col items-center justify-center gap-6 overflow-hidden px-6 text-center">
