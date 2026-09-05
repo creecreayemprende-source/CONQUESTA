@@ -20,7 +20,7 @@ export default function RetoFinalPage({ params }: { params: Promise<{ pais: stri
   const { pais: paisParam } = use(params);
   const pais = decodeURIComponent(paisParam);
   const router = useRouter();
-  const { state, setState } = useAppState();
+  const { state, setState, guardarAhora } = useAppState();
   const { playCorrect, playIncorrect, playVictoria, playTiempoAgotado, playTick } = useSound();
 
   // El banco se baraja con Math.random() — se genera SOLO en el cliente (efecto,
@@ -62,7 +62,13 @@ export default function RetoFinalPage({ params }: { params: Promise<{ pais: stri
           [pais]: { ...progreso, retoFinalCompletado: conquistado || progreso.retoFinalCompletado },
         },
       };
-      return conquistado ? otorgarInsigniaSiCorresponde(conProgreso, pais) : conProgreso;
+      const nuevo = conquistado ? otorgarInsigniaSiCorresponde(conProgreso, pais) : conProgreso;
+      // Conquistar un país es un hito real que no se puede dar el lujo de
+      // perder si el usuario cierra la app justo después de terminar (bug
+      // real reportado: el guardado normal espera 800ms y no reintenta si no
+      // hay ningún cambio de estado posterior) — se guarda de inmediato.
+      if (conquistado) void guardarAhora(nuevo);
+      return nuevo;
     });
 
     setAciertos(aciertosFinal);

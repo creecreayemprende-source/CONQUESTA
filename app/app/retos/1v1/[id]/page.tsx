@@ -2,12 +2,18 @@
 
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Check, X as XIcon, Swords, Trophy } from "lucide-react";
+import { ChevronLeft, Check, X as XIcon, Swords, Trophy, Clock3 } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { preguntasPorIndices } from "@/lib/trivia-cultura-general";
 import { useSound } from "@/lib/use-sound";
 import { Confetti } from "@/components/app/Confetti";
 import type { PreguntaTrivia } from "@/lib/onboarding-data";
+
+function formatearTiempo(segundos: number): string {
+  const m = Math.floor(segundos / 60);
+  const s = segundos % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
 
 interface RetoRow {
   id: string;
@@ -19,6 +25,8 @@ interface RetoRow {
   puntaje_retado: number | null;
   estado: "esperando_retado" | "completado";
   creado_en: string;
+  tiempo_retador_segundos: number | null;
+  tiempo_retado_segundos: number | null;
 }
 
 type Vista =
@@ -43,6 +51,17 @@ export default function Reto1v1Page({ params }: { params: Promise<{ id: string }
   const [selected, setSelected] = useState<number | null>(null);
   const [aciertos, setAciertos] = useState(0);
   const [puntajeFinalRetado, setPuntajeFinalRetado] = useState<number | null>(null);
+  const [segundosTranscurridos, setSegundosTranscurridos] = useState(0);
+  const [tiempoFinalRetado, setTiempoFinalRetado] = useState<number | null>(null);
+
+  // Cronómetro que sube mientras se juega — mismo patrón que la pantalla del
+  // retador (`desafio/page.tsx`): antes esta pantalla no tenía ningún reloj,
+  // así que quien aceptaba un reto no podía ver cuánto tiempo llevaba.
+  useEffect(() => {
+    if (vista !== "jugando") return;
+    const interval = setInterval(() => setSegundosTranscurridos((t) => t + 1), 1000);
+    return () => clearInterval(interval);
+  }, [vista]);
 
   useEffect(() => {
     let cancelado = false;
@@ -69,6 +88,7 @@ export default function Reto1v1Page({ params }: { params: Promise<{ id: string }
       } else if (r.estado === "completado") {
         setVista("resultado");
         setPuntajeFinalRetado(r.puntaje_retado);
+        setTiempoFinalRetado(r.tiempo_retado_segundos);
       } else if (r.retado_id === user.id) {
         // ya lo había aceptado antes pero no lo terminó — retomar el juego.
         cargarPreguntas(supabase, id);
@@ -116,8 +136,13 @@ export default function Reto1v1Page({ params }: { params: Promise<{ id: string }
       } else {
         setAciertos(nuevosAciertos);
         setPuntajeFinalRetado(nuevosAciertos);
+        setTiempoFinalRetado(segundosTranscurridos);
         const supabase = supabaseBrowser();
-        await supabase.rpc("completar_reto_1v1", { p_id: id, p_puntaje: nuevosAciertos });
+        await supabase.rpc("completar_reto_1v1", {
+          p_id: id,
+          p_puntaje: nuevosAciertos,
+          p_tiempo_segundos: segundosTranscurridos,
+        });
         if (nuevosAciertos / preguntas.length >= 0.7) playVictoria();
         setVista("resultado");
       }
@@ -151,7 +176,11 @@ export default function Reto1v1Page({ params }: { params: Promise<{ id: string }
         <h1 className="font-display text-xl font-bold text-txt-primary">Este es tu propio reto</h1>
         <p className="text-sm text-txt-secondary">
           {reto?.estado === "completado"
-            ? `Tu amigo ya jugó — sacó ${reto.puntaje_retado}/${reto.total_preguntas}, tú sacaste ${reto.puntaje_retador}/${reto.total_preguntas}.`
+            ? `Tu amigo ya jugó — sacó ${reto.puntaje_retado}/${reto.total_preguntas}${
+                reto.tiempo_retado_segundos != null ? ` en ${formatearTiempo(reto.tiempo_retado_segundos)}` : ""
+              }, tú sacaste ${reto.puntaje_retador}/${reto.total_preguntas}${
+                reto.tiempo_retador_segundos != null ? ` en ${formatearTiempo(reto.tiempo_retador_segundos)}` : ""
+              }.`
             : "Todavía esperando a que tu amigo abra el link y juegue."}
         </p>
         <button
@@ -219,7 +248,10 @@ export default function Reto1v1Page({ params }: { params: Promise<{ id: string }
           <p className="flex-1 text-center text-xs font-semibold uppercase tracking-wide text-txt-tertiary">
             Reto de {reto?.retador_nombre} · {index + 1}/{preguntas.length}
           </p>
-          <span className="w-11" />
+          <span className="flex items-center gap-1 rounded-full bg-surface-secondary px-3 py-1.5 text-sm font-bold tabular text-txt-primary">
+            <Clock3 className="h-3.5 w-3.5" strokeWidth={2.4} />
+            {formatearTiempo(segundosTranscurridos)}
+          </span>
         </div>
 
         <div className="flex flex-1 flex-col gap-6 pb-6 pt-8">
@@ -275,6 +307,18 @@ export default function Reto1v1Page({ params }: { params: Promise<{ id: string }
             {reto.retador_nombre}: {reto.puntaje_retador}/{reto.total_preguntas}
           </span>
         </div>
+        {(tiempoFinalRetado != null || reto.tiempo_retador_segundos != null) && (
+          <div className="flex items-center gap-4 text-xs font-semibold text-txt-tertiary">
+            <span className="flex items-center gap-1">
+              <Clock3 className="h-3.5 w-3.5" strokeWidth={2.4} />
+              Tú: {tiempoFinalRetado != null ? formatearTiempo(tiempoFinalRetado) : "—"}
+            </span>
+            <span className="flex items-center gap-1">
+              <Clock3 className="h-3.5 w-3.5" strokeWidth={2.4} />
+              {reto.retador_nombre}: {reto.tiempo_retador_segundos != null ? formatearTiempo(reto.tiempo_retador_segundos) : "—"}
+            </span>
+          </div>
+        )}
         <button
           type="button"
           onClick={() => router.push("/app/retos")}

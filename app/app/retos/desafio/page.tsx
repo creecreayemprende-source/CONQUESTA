@@ -83,6 +83,7 @@ export default function DesafioCulturaGeneralPage() {
           pregunta_indices: indices,
           total_preguntas: preguntas.length,
           puntaje_retador: aciertos,
+          tiempo_retador_segundos: segundosTranscurridos,
         })
         .select("id")
         .single();

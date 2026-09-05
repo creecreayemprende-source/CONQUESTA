@@ -9,6 +9,10 @@ interface Ctx {
   state: AppState;
   setState: React.Dispatch<React.SetStateAction<AppState>>;
   ready: boolean;
+  /** Guarda un estado en Supabase DE INMEDIATO, sin esperar el debounce de
+   * 800ms — para hitos que no se pueden dar el lujo de perderse si el usuario
+   * cierra la pestaña/app justo después (ej. conquistar un país). */
+  guardarAhora: (s: AppState) => Promise<void>;
 }
 
 const AppStateContext = createContext<Ctx | null>(null);
@@ -80,7 +84,17 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(t);
   }, [state, ready]);
 
-  return <AppStateContext.Provider value={{ state, setState, ready }}>{children}</AppStateContext.Provider>;
+  async function guardarAhora(s: AppState) {
+    if (!userIdRef.current) return;
+    try {
+      await pushAppState(supabaseBrowser(), userIdRef.current, s);
+    } catch {
+      // Sin conexión o error transitorio: queda en localStorage (guardado por
+      // el efecto de arriba) y el debounce normal lo reintentará más tarde.
+    }
+  }
+
+  return <AppStateContext.Provider value={{ state, setState, ready, guardarAhora }}>{children}</AppStateContext.Provider>;
 }
 
 export function useAppState() {
