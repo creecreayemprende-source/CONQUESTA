@@ -37,10 +37,11 @@ export interface Inventario {
 }
 
 export interface AppState {
-  v: 9;
+  v: 10;
   nombre: string;
   avatarUrl: string | null;
   recordatorioDiario: boolean;
+  horaRecordatorio: string | null; // ej. "8:00 AM" — a qué hora quiere el aviso (elegida en onboarding o en Perfil)
   coins: number;
   gems: number;
   currentStreak: number;
@@ -61,7 +62,7 @@ export interface AppState {
   graceEndsAt: string | null; // ISO — hasta cuándo hay gracia si el pago falló
 }
 
-const KEY = "conquesta_app_state_v9";
+const KEY = "conquesta_app_state_v10";
 
 function rondaVacia(): RondaEstado {
   return { completado: false, aciertos: 0, total: 0 };
@@ -86,10 +87,11 @@ export function progresoPaisVacio(): ProgresoPais {
 // quedaría inconsistente con lo que el usuario en verdad jugó.
 function estadoInicial(): AppState {
   return {
-    v: 9,
+    v: 10,
     nombre: "Sofía",
     avatarUrl: null,
     recordatorioDiario: false,
+    horaRecordatorio: null,
     coins: 0,
     gems: 0,
     currentStreak: 0,
@@ -117,7 +119,7 @@ export function loadAppState(): AppState {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return estadoInicial();
     const parsed = JSON.parse(raw);
-    if (parsed?.v !== 9) return estadoInicial();
+    if (parsed?.v !== 10) return estadoInicial();
     return parsed as AppState;
   } catch {
     return estadoInicial();
@@ -241,7 +243,13 @@ export function aplicarRecompensaOnboarding(
     monedasGanadas,
     categoriasFavoritas,
     recordatorioActivado,
-  }: { monedasGanadas: number; categoriasFavoritas: Categoria[]; recordatorioActivado?: boolean }
+    horaRecordatorio,
+  }: {
+    monedasGanadas: number;
+    categoriasFavoritas: Categoria[];
+    recordatorioActivado?: boolean;
+    horaRecordatorio?: string;
+  }
 ): AppState {
   const hoy = new Date().toISOString().slice(0, 10);
   const conRacha = registrarActividad(state, hoy);
@@ -250,6 +258,7 @@ export function aplicarRecompensaOnboarding(
     coins: conRacha.coins + monedasGanadas,
     categoriasFavoritas,
     recordatorioDiario: recordatorioActivado ?? conRacha.recordatorioDiario,
+    horaRecordatorio: recordatorioActivado ? (horaRecordatorio ?? conRacha.horaRecordatorio) : conRacha.horaRecordatorio,
   };
 }
 

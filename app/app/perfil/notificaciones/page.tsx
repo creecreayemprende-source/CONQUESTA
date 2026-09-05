@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, Bell } from "lucide-react";
 import { useAppState } from "@/lib/app-state-context";
 
+const HORAS_SUGERIDAS = ["8:00 AM", "1:00 PM", "8:00 PM"];
+
 export default function NotificacionesPage() {
   const router = useRouter();
   const { state, setState, ready } = useAppState();
@@ -56,10 +58,32 @@ export default function NotificacionesPage() {
         </button>
       </div>
 
+      {state.recordatorioDiario && (
+        <div className="mt-3 rounded-xl border border-border-default bg-surface-primary p-4">
+          <p className="mb-3 text-sm font-semibold text-txt-primary">¿A qué hora te recordamos?</p>
+          <div className="flex flex-wrap gap-2">
+            {HORAS_SUGERIDAS.map((h) => (
+              <button
+                key={h}
+                type="button"
+                onClick={() => setState((s) => ({ ...s, horaRecordatorio: h }))}
+                className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors duration-200 ease-out ${
+                  (state.horaRecordatorio ?? "8:00 PM") === h
+                    ? "border-brand-primary bg-brand-primary-soft text-brand-primary"
+                    : "border-border-default bg-surface-base text-txt-primary"
+                }`}
+              >
+                {h}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <p className="mt-3 px-1 text-xs leading-relaxed text-txt-tertiary">
         Por ahora esto guarda tu preferencia dentro de la app. Las notificaciones push reales (que
         te avisen aunque tengas Conquesta cerrada) llegan pronto — cuando estén listas, se
-        activarán automáticamente si dejaste este interruptor encendido.
+        activarán automáticamente a la hora que elegiste si dejaste este interruptor encendido.
       </p>
     </div>
   );

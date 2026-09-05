@@ -85,6 +85,7 @@ function OnboardingFlow() {
         monedasGanadas: state.monedasGanadas ?? 0,
         categoriasFavoritas: state.categoriasFavoritas ?? [],
         recordatorioActivado: state.recordatorioActivado,
+        horaRecordatorio: state.horaRecordatorio,
       })
     );
     router.push("/app");
