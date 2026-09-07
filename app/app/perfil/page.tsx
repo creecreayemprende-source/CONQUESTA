@@ -9,6 +9,7 @@ import { PAISES_AMERICA } from "@/lib/countries-data";
 import { rutaDelPais } from "@/lib/rutas-data";
 import { Flame, Gem, Coins, LogOut, Settings, Volume2, VolumeX, Camera, Pencil, Check } from "lucide-react";
 import { PassportStamp, type EstadoSello } from "@/components/app/PassportStamp";
+import { SouvenirVitrina } from "@/components/app/SouvenirVitrina";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { subirAvatar } from "@/lib/supabase/storage";
 
@@ -162,6 +163,12 @@ export default function PerfilPage() {
           })}
         </div>
       </div>
+
+      <SouvenirVitrina
+        paisesConquistados={PAISES_CON_RUTA.filter((p) => progresoDePais(state, p.nombre).retoFinalCompletado).map(
+          (p) => p.nombre
+        )}
+      />
 
       <Link
         href="/app/perfil/notificaciones"

@@ -2,8 +2,11 @@
 
 import { use, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, X as XIcon, RotateCcw, Scissors, Clock3, Lightbulb, ChevronLeft, Crown } from "lucide-react";
+import { Check, X as XIcon, RotateCcw, Scissors, Clock3, Lightbulb, ChevronLeft, Crown, Gift } from "lucide-react";
 import { SaldoMonedas } from "@/components/app/SaldoMonedas";
+import { CompletarPalabra } from "@/components/app/CompletarPalabra";
+import { formatosDeRonda, type FormatoPregunta } from "@/lib/formato-pregunta";
+import { souvenirDePais } from "@/lib/souvenirs-data";
 import { useAppState } from "@/lib/app-state-context";
 import { registrarActividad, progresoDePais, otorgarInsigniaSiCorresponde, esPro } from "@/lib/app-state";
 import { AYUDAS_CONFIG } from "@/lib/ayudas";
@@ -28,8 +31,11 @@ export default function RetoFinalPage({ params }: { params: Promise<{ pais: stri
   // no en el initializer de useState) para que el HTML del servidor y el del
   // cliente coincidan en la primera pintura y no haya error de hidratación.
   const [preguntas, setPreguntas] = useState<PreguntaTrivia[] | null>(null);
+  const [formatos, setFormatos] = useState<FormatoPregunta[] | null>(null);
   useEffect(() => {
-    setPreguntas(preguntasRetoFinal(pais, categoriasDelPais()));
+    const qs = preguntasRetoFinal(pais, categoriasDelPais());
+    setPreguntas(qs);
+    setFormatos(formatosDeRonda(qs));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [index, setIndex] = useState(0);
@@ -91,7 +97,9 @@ export default function RetoFinalPage({ params }: { params: Promise<{ pais: stri
     setPistaActiva(false);
     setTerminado(false);
     setTiempo(RETO_FINAL_CONFIG.segundos);
-    setPreguntas(preguntasRetoFinal(pais, categoriasDelPais()));
+    const qs = preguntasRetoFinal(pais, categoriasDelPais());
+    setPreguntas(qs);
+    setFormatos(formatosDeRonda(qs));
   }
 
   // Cada pregunta nueva empieza sin 50/50 ni pista aplicados.
@@ -163,6 +171,19 @@ export default function RetoFinalPage({ params }: { params: Promise<{ pais: stri
     consumirAyuda("tiempoExtra");
   }
 
+  function avanzar(correcta: boolean) {
+    if (!preguntas) return;
+    const nuevosAciertos = aciertos + (correcta ? 1 : 0);
+    if (index < preguntas.length - 1) {
+      setAciertos(nuevosAciertos);
+      aciertosRef.current = nuevosAciertos;
+      setIndex((idx) => idx + 1);
+      indexRef.current = index + 1;
+    } else {
+      finalizar(nuevosAciertos);
+    }
+  }
+
   function responder(i: number) {
     if (!preguntas || respondiendoRef.current || terminadoRef.current) return;
     respondiendoRef.current = true;
@@ -174,19 +195,22 @@ export default function RetoFinalPage({ params }: { params: Promise<{ pais: stri
     setTimeout(() => {
       respondiendoRef.current = false;
       setSelected(null);
-      const nuevosAciertos = aciertos + (correcta ? 1 : 0);
-      if (index < preguntas.length - 1) {
-        setAciertos(nuevosAciertos);
-        aciertosRef.current = nuevosAciertos;
-        setIndex((idx) => idx + 1);
-        indexRef.current = index + 1;
-      } else {
-        finalizar(nuevosAciertos);
-      }
+      avanzar(correcta);
     }, 600);
   }
 
-  if (!preguntas) {
+  function responderCompletar(correcta: boolean) {
+    if (!preguntas || respondiendoRef.current || terminadoRef.current) return;
+    respondiendoRef.current = true;
+    if (correcta) playCorrect();
+    else playIncorrect();
+    setTimeout(() => {
+      respondiendoRef.current = false;
+      avanzar(correcta);
+    }, 400);
+  }
+
+  if (!preguntas || !formatos) {
     return (
       <div className="flex min-h-dvh flex-col gap-3 px-4 pt-4">
         <div className="h-1 w-full animate-pulse rounded-full bg-surface-secondary" />
@@ -227,6 +251,12 @@ export default function RetoFinalPage({ params }: { params: Promise<{ pais: stri
               +<CountUp value={aciertos * 5} /> monedas
             </span>
             <span className="rounded-full bg-surface-secondary px-3 py-1.5">+3 gemas</span>
+          </div>
+        )}
+        {conquistado && souvenirDePais(pais) && (
+          <div className="flex items-center gap-2 rounded-xl bg-gold-soft px-4 py-2.5 text-xs font-semibold text-txt-primary">
+            <Gift className="h-4 w-4 shrink-0 text-gold" strokeWidth={2.2} />
+            Nuevo souvenir: {souvenirDePais(pais)!.nombre} — véelo en tu Perfil
           </div>
         )}
         <div className="flex w-full max-w-xs flex-col gap-3">
@@ -273,6 +303,7 @@ export default function RetoFinalPage({ params }: { params: Promise<{ pais: stri
   }
 
   const pregunta = preguntas[index];
+  const formato = formatos[index];
   const pctTiempo = (tiempo / RETO_FINAL_CONFIG.segundos) * 100;
 
   return (
@@ -316,7 +347,7 @@ export default function RetoFinalPage({ params }: { params: Promise<{ pais: stri
         <button
           type="button"
           onClick={usarCincuenta}
-          disabled={!puedeUsar("cincuenta") || ocultas.length > 0}
+          disabled={formato === "completar" || !puedeUsar("cincuenta") || ocultas.length > 0}
           className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border-default bg-surface-primary py-2 text-xs font-semibold text-txt-primary disabled:opacity-40"
         >
           <Scissors className="h-3.5 w-3.5" strokeWidth={2.2} />
@@ -334,7 +365,7 @@ export default function RetoFinalPage({ params }: { params: Promise<{ pais: stri
         <button
           type="button"
           onClick={usarPista}
-          disabled={!puedeUsar("pista") || pistaActiva}
+          disabled={formato === "completar" || !puedeUsar("pista") || pistaActiva}
           className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border-default bg-surface-primary py-2 text-xs font-semibold text-txt-primary disabled:opacity-40"
         >
           <Lightbulb className="h-3.5 w-3.5" strokeWidth={2.2} />
@@ -349,35 +380,39 @@ export default function RetoFinalPage({ params }: { params: Promise<{ pais: stri
         <h1 className="text-balance font-display text-2xl font-bold leading-tight text-txt-primary">
           {pregunta.pregunta}
         </h1>
-        <div className="flex flex-col gap-3">
-          {pregunta.opciones.map((op, i) => {
-            if (ocultas.includes(i)) return null;
-            const showState = selected !== null;
-            const isCorrect = i === pregunta.correctaIndex;
-            const isSelected = selected === i;
-            return (
-              <button
-                key={op}
-                type="button"
-                onClick={() => responder(i)}
-                disabled={selected !== null}
-                className={`flex h-14 w-full items-center justify-between rounded-lg border px-4 text-left font-body text-base font-medium transition-colors duration-200 ease-out active:scale-[0.98] ${
-                  showState && isCorrect
-                    ? "border-status-success bg-status-success-soft text-txt-primary"
-                    : showState && isSelected
-                      ? "border-status-error bg-status-error-soft text-txt-primary"
-                      : pistaActiva && isCorrect
-                        ? "border-gold bg-surface-primary text-txt-primary ring-2 ring-gold"
-                        : "border-border-default bg-surface-primary text-txt-primary shadow-sm"
-                }`}
-              >
-                {op}
-                {showState && isCorrect && <Check className="h-5 w-5 text-status-success" strokeWidth={2.6} />}
-                {showState && isSelected && !isCorrect && <XIcon className="h-5 w-5 text-status-error" strokeWidth={2.6} />}
-              </button>
-            );
-          })}
-        </div>
+        {formato === "completar" ? (
+          <CompletarPalabra key={index} respuesta={pregunta.opciones[pregunta.correctaIndex]} onResuelto={responderCompletar} />
+        ) : (
+          <div className="flex flex-col gap-3">
+            {pregunta.opciones.map((op, i) => {
+              if (ocultas.includes(i)) return null;
+              const showState = selected !== null;
+              const isCorrect = i === pregunta.correctaIndex;
+              const isSelected = selected === i;
+              return (
+                <button
+                  key={op}
+                  type="button"
+                  onClick={() => responder(i)}
+                  disabled={selected !== null}
+                  className={`flex h-14 w-full items-center justify-between rounded-lg border px-4 text-left font-body text-base font-medium transition-colors duration-200 ease-out active:scale-[0.98] ${
+                    showState && isCorrect
+                      ? "border-status-success bg-status-success-soft text-txt-primary"
+                      : showState && isSelected
+                        ? "border-status-error bg-status-error-soft text-txt-primary"
+                        : pistaActiva && isCorrect
+                          ? "border-gold bg-surface-primary text-txt-primary ring-2 ring-gold"
+                          : "border-border-default bg-surface-primary text-txt-primary shadow-sm"
+                  }`}
+                >
+                  {op}
+                  {showState && isCorrect && <Check className="h-5 w-5 text-status-success" strokeWidth={2.6} />}
+                  {showState && isSelected && !isCorrect && <XIcon className="h-5 w-5 text-status-error" strokeWidth={2.6} />}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

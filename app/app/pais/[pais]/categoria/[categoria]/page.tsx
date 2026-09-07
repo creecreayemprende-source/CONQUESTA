@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, Lock, Check, Compass, Telescope, Crown, Clock } from "lucide-react";
@@ -9,6 +9,8 @@ import { progresoDePais, rondaDesbloqueada } from "@/lib/app-state";
 import { RONDAS, type RondaId } from "@/lib/trivia-bank";
 import type { Categoria } from "@/lib/onboarding-data";
 import { CATEGORIA_COLOR } from "@/lib/category-style";
+import { Postal } from "@/components/app/Postal";
+import { postalDe } from "@/lib/postales-data";
 
 const RONDA_INFO: Record<RondaId, { icon: typeof Compass; desc: string }> = {
   Explorador: { icon: Compass, desc: "Primer contacto con la categoría" },
@@ -26,6 +28,7 @@ export default function CategoriaPage({
   const categoria = decodeURIComponent(categoriaParam) as Categoria;
   const router = useRouter();
   const { state, ready } = useAppState();
+  const [postalVista, setPostalVista] = useState(false);
 
   if (!ready) {
     return <div className="m-4 h-64 animate-pulse rounded-2xl bg-surface-secondary" />;
@@ -33,6 +36,16 @@ export default function CategoriaPage({
 
   const progreso = progresoDePais(state, pais);
   const progresoCategoria = progreso.categorias[categoria];
+
+  // La postal (dato curioso, sin preguntas) se muestra la primera vez que se
+  // entra a esta categoría — mientras Explorador siga sin completar — para
+  // romper el ritmo de "solo examen" antes de empezar a jugar.
+  const textoPostal = postalDe(pais, categoria);
+  if (textoPostal && !progresoCategoria.rondas.Explorador.completado && !postalVista) {
+    return (
+      <Postal pais={pais} categoria={categoria} texto={textoPostal} onContinuar={() => setPostalVista(true)} />
+    );
+  }
 
   return (
     <div className="flex flex-col px-4">
