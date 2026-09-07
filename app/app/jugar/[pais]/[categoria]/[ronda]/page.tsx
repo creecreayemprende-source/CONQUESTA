@@ -4,8 +4,6 @@ import { use, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, X as XIcon, RotateCcw, Scissors, Clock3, Lightbulb, ChevronLeft } from "lucide-react";
 import { SaldoMonedas } from "@/components/app/SaldoMonedas";
-import { CompletarPalabra } from "@/components/app/CompletarPalabra";
-import { formatosDeRonda, type FormatoPregunta } from "@/lib/formato-pregunta";
 import { useAppState } from "@/lib/app-state-context";
 import { registrarActividad, rondaAprobada, progresoDePais } from "@/lib/app-state";
 import { AYUDAS_CONFIG } from "@/lib/ayudas";
@@ -36,11 +34,8 @@ export default function JugarRondaPage({
   // no en el initializer de useState) para que el HTML del servidor y el del
   // cliente coincidan en la primera pintura y no haya error de hidratación.
   const [preguntas, setPreguntas] = useState<PreguntaTrivia[] | null>(null);
-  const [formatos, setFormatos] = useState<FormatoPregunta[] | null>(null);
   useEffect(() => {
-    const qs = preguntasParaRonda(pais, categoria, ronda);
-    setPreguntas(qs);
-    setFormatos(formatosDeRonda(qs));
+    setPreguntas(preguntasParaRonda(pais, categoria, ronda));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [index, setIndex] = useState(0);
@@ -104,9 +99,7 @@ export default function JugarRondaPage({
     setPistaActiva(false);
     setTerminado(false);
     setTiempo(cfg.segundos);
-    const qs = preguntasParaRonda(pais, categoria, ronda);
-    setPreguntas(qs);
-    setFormatos(formatosDeRonda(qs));
+    setPreguntas(preguntasParaRonda(pais, categoria, ronda));
   }
 
   // Cada pregunta nueva empieza sin 50/50 ni pista aplicados.
@@ -179,19 +172,6 @@ export default function JugarRondaPage({
     consumirAyuda("tiempoExtra");
   }
 
-  function avanzar(correcta: boolean) {
-    if (!preguntas) return;
-    const nuevosAciertos = aciertos + (correcta ? 1 : 0);
-    if (index < preguntas.length - 1) {
-      setAciertos(nuevosAciertos);
-      aciertosRef.current = nuevosAciertos;
-      setIndex((idx) => idx + 1);
-      indexRef.current = index + 1;
-    } else {
-      finalizar(nuevosAciertos, preguntas.length);
-    }
-  }
-
   function responder(i: number) {
     if (!preguntas || respondiendoRef.current || terminadoRef.current) return;
     respondiendoRef.current = true;
@@ -203,22 +183,19 @@ export default function JugarRondaPage({
     setTimeout(() => {
       respondiendoRef.current = false;
       setSelected(null);
-      avanzar(correcta);
+      const nuevosAciertos = aciertos + (correcta ? 1 : 0);
+      if (index < preguntas.length - 1) {
+        setAciertos(nuevosAciertos);
+        aciertosRef.current = nuevosAciertos;
+        setIndex((idx) => idx + 1);
+        indexRef.current = index + 1;
+      } else {
+        finalizar(nuevosAciertos, preguntas.length);
+      }
     }, 700);
   }
 
-  function responderCompletar(correcta: boolean) {
-    if (!preguntas || respondiendoRef.current || terminadoRef.current) return;
-    respondiendoRef.current = true;
-    if (correcta) playCorrect();
-    else playIncorrect();
-    setTimeout(() => {
-      respondiendoRef.current = false;
-      avanzar(correcta);
-    }, 400);
-  }
-
-  if (!preguntas || !formatos) {
+  if (!preguntas) {
     return (
       <div className="flex min-h-dvh flex-col gap-3 px-4 pt-4">
         <div className="h-1 w-full animate-pulse rounded-full bg-surface-secondary" />
@@ -280,7 +257,6 @@ export default function JugarRondaPage({
   }
 
   const pregunta = preguntas[index];
-  const formato = formatos[index];
   const pctTiempo = (tiempo / cfg.segundos) * 100;
 
   return (
@@ -324,7 +300,7 @@ export default function JugarRondaPage({
         <button
           type="button"
           onClick={usarCincuenta}
-          disabled={formato === "completar" || !puedeUsar("cincuenta") || ocultas.length > 0}
+          disabled={!puedeUsar("cincuenta") || ocultas.length > 0}
           className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border-default bg-surface-primary py-2 text-xs font-semibold text-txt-primary disabled:opacity-40"
         >
           <Scissors className="h-3.5 w-3.5" strokeWidth={2.2} />
@@ -342,7 +318,7 @@ export default function JugarRondaPage({
         <button
           type="button"
           onClick={usarPista}
-          disabled={formato === "completar" || !puedeUsar("pista") || pistaActiva}
+          disabled={!puedeUsar("pista") || pistaActiva}
           className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border-default bg-surface-primary py-2 text-xs font-semibold text-txt-primary disabled:opacity-40"
         >
           <Lightbulb className="h-3.5 w-3.5" strokeWidth={2.2} />
@@ -354,39 +330,35 @@ export default function JugarRondaPage({
         <h1 className="text-balance font-display text-2xl font-bold leading-tight text-txt-primary">
           {pregunta.pregunta}
         </h1>
-        {formato === "completar" ? (
-          <CompletarPalabra key={index} respuesta={pregunta.opciones[pregunta.correctaIndex]} onResuelto={responderCompletar} />
-        ) : (
-          <div className="flex flex-col gap-3">
-            {pregunta.opciones.map((op, i) => {
-              if (ocultas.includes(i)) return null;
-              const showState = selected !== null;
-              const isCorrect = i === pregunta.correctaIndex;
-              const isSelected = selected === i;
-              return (
-                <button
-                  key={op}
-                  type="button"
-                  onClick={() => responder(i)}
-                  disabled={selected !== null}
-                  className={`flex h-14 w-full items-center justify-between rounded-lg border px-4 text-left font-body text-base font-medium transition-colors duration-200 ease-out active:scale-[0.98] ${
-                    showState && isCorrect
-                      ? "border-status-success bg-status-success-soft text-txt-primary"
-                      : showState && isSelected
-                        ? "border-status-error bg-status-error-soft text-txt-primary"
-                        : pistaActiva && isCorrect
-                          ? "border-gold bg-surface-primary text-txt-primary ring-2 ring-gold"
-                          : "border-border-default bg-surface-primary text-txt-primary shadow-sm"
-                  }`}
-                >
-                  {op}
-                  {showState && isCorrect && <Check className="h-5 w-5 text-status-success" strokeWidth={2.6} />}
-                  {showState && isSelected && !isCorrect && <XIcon className="h-5 w-5 text-status-error" strokeWidth={2.6} />}
-                </button>
-              );
-            })}
-          </div>
-        )}
+        <div className="flex flex-col gap-3">
+          {pregunta.opciones.map((op, i) => {
+            if (ocultas.includes(i)) return null;
+            const showState = selected !== null;
+            const isCorrect = i === pregunta.correctaIndex;
+            const isSelected = selected === i;
+            return (
+              <button
+                key={op}
+                type="button"
+                onClick={() => responder(i)}
+                disabled={selected !== null}
+                className={`flex h-14 w-full items-center justify-between rounded-lg border px-4 text-left font-body text-base font-medium transition-colors duration-200 ease-out active:scale-[0.98] ${
+                  showState && isCorrect
+                    ? "border-status-success bg-status-success-soft text-txt-primary"
+                    : showState && isSelected
+                      ? "border-status-error bg-status-error-soft text-txt-primary"
+                      : pistaActiva && isCorrect
+                        ? "border-gold bg-surface-primary text-txt-primary ring-2 ring-gold"
+                        : "border-border-default bg-surface-primary text-txt-primary shadow-sm"
+                }`}
+              >
+                {op}
+                {showState && isCorrect && <Check className="h-5 w-5 text-status-success" strokeWidth={2.6} />}
+                {showState && isSelected && !isCorrect && <XIcon className="h-5 w-5 text-status-error" strokeWidth={2.6} />}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

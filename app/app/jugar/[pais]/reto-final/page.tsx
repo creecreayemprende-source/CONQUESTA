@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Check, X as XIcon, RotateCcw, Scissors, Clock3, Lightbulb, ChevronLeft, Crown, Gift } from "lucide-react";
 import { SaldoMonedas } from "@/components/app/SaldoMonedas";
 import { CompletarPalabra } from "@/components/app/CompletarPalabra";
-import { formatosDeRonda, type FormatoPregunta } from "@/lib/formato-pregunta";
+import { formatosRetoFinal, type FormatoPregunta } from "@/lib/formato-pregunta";
 import { souvenirDePais } from "@/lib/souvenirs-data";
 import { useAppState } from "@/lib/app-state-context";
 import { registrarActividad, progresoDePais, otorgarInsigniaSiCorresponde, esPro } from "@/lib/app-state";
@@ -35,7 +35,7 @@ export default function RetoFinalPage({ params }: { params: Promise<{ pais: stri
   useEffect(() => {
     const qs = preguntasRetoFinal(pais, categoriasDelPais());
     setPreguntas(qs);
-    setFormatos(formatosDeRonda(qs));
+    setFormatos(formatosRetoFinal(qs));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [index, setIndex] = useState(0);
@@ -99,7 +99,7 @@ export default function RetoFinalPage({ params }: { params: Promise<{ pais: stri
     setTiempo(RETO_FINAL_CONFIG.segundos);
     const qs = preguntasRetoFinal(pais, categoriasDelPais());
     setPreguntas(qs);
-    setFormatos(formatosDeRonda(qs));
+    setFormatos(formatosRetoFinal(qs));
   }
 
   // Cada pregunta nueva empieza sin 50/50 ni pista aplicados.

@@ -1,4 +1,5 @@
 import type { PreguntaTrivia } from "./onboarding-data";
+import { shuffle } from "./trivia-bank";
 
 export type FormatoPregunta = "opcion_multiple" | "completar";
 
@@ -9,14 +10,18 @@ function esCompletable(respuesta: string): boolean {
   return /^[A-Za-zÀ-ÿ ]{3,16}$/.test(respuesta.trim());
 }
 
-/** Decide el formato de cada pregunta de una ronda: mezcla opción múltiple
- * (default) con "completar la palabra" en hasta ~1 de cada 3 preguntas
- * elegibles, para romper el ritmo de "puro examen" sin depender de contenido
- * nuevo (reutiliza la misma respuesta correcta que ya tiene la pregunta). */
-export function formatosDeRonda(preguntas: PreguntaTrivia[]): FormatoPregunta[] {
-  return preguntas.map((p) => {
-    const respuesta = p.opciones[p.correctaIndex];
-    if (esCompletable(respuesta) && Math.random() < 0.35) return "completar";
-    return "opcion_multiple";
-  });
+/** El Reto Final sí es un repaso de lo que el jugador ya vio en las 3 rondas
+ * de cada categoría — ahí SÍ tiene sentido pedirle que recuerde, no solo que
+ * reconozca. Se mezclan 2 o 3 preguntas (nunca más) en formato "completar la
+ * palabra", el resto queda en opción múltiple. */
+export function formatosRetoFinal(preguntas: PreguntaTrivia[]): FormatoPregunta[] {
+  const elegibles = preguntas
+    .map((p, i) => ({ i, elegible: esCompletable(p.opciones[p.correctaIndex]) }))
+    .filter((x) => x.elegible)
+    .map((x) => x.i);
+
+  const cantidad = Math.min(elegibles.length, Math.random() < 0.5 ? 2 : 3);
+  const elegidos = new Set(shuffle(elegibles).slice(0, cantidad));
+
+  return preguntas.map((_, i) => (elegidos.has(i) ? "completar" : "opcion_multiple"));
 }

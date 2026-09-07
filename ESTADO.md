@@ -798,6 +798,18 @@ El usuario sintió la app "muy plana, como un examen" — solo preguntas de opci
 `npx tsc --noEmit` ✓ · `npm run build` ✓ (limpio) · `/app` sin sesión → `307` en producción real. Confirmado en el navegador (datos simulados): la postal de Colombia/Geografía se ve con la bandera y el dato correcto; al marcar Colombia como conquistada, "Café de Colombia" aparece desbloqueado en la vitrina (los otros 5 siguen en "???"); una pregunta en formato "completar la palabra" (PACÍFICO) se resolvió letra por letra correctamente — incluida la tilde (clic en "I" reveló la "Í") — y avanzó a la siguiente pregunta reseteando el contador de errores.
 Subido a GitHub → Vercel vuelve a desplegar automáticamente.
 
+## Corrección: "completar la palabra" solo en el Reto Final (2026-09-05)
+El usuario probó el formato mixto recién construido y frenó a tiempo: en las rondas de país (Explorador/Descubridor/Experto), "completar la palabra" exige recordar la respuesta de memoria SIN ninguna pista — mucho más difícil que reconocerla entre 4 opciones, y puede frustrar justo a quien menos conoce el país y hacerlo abandonar. Pidió dejarlo SOLO en el Reto Final (que es un repaso de lo ya visto, donde sí tiene sentido pedir memoria), con 2 o 3 preguntas fijas, no un porcentaje aleatorio que pudiera tocar más.
+
+### Corregido
+- **`app/app/jugar/[pais]/[categoria]/[ronda]/page.tsx`**: revertido 100% a opción múltiple — se quitó por completo `CompletarPalabra`, el estado de formatos y las condiciones de ayudas asociadas.
+- **`lib/formato-pregunta.ts`**: se eliminó `formatosDeRonda` (ya sin uso). Quedó solo `formatosRetoFinal()`, que elige exactamente 2 o 3 preguntas elegibles (nunca más) para el formato "completar" — antes era ~35% de probabilidad por pregunta, ahora es una cantidad fija y acotada.
+- `app/app/jugar/[pais]/reto-final/page.tsx` ahora llama a `formatosRetoFinal` en vez de la función genérica.
+
+### Verificación
+`npx tsc --noEmit` ✓ · `npm run build` ✓ (limpio) · `/app` sin sesión → `307` en producción real. Confirmado en el navegador: jugué las 5 preguntas de Explorador (Colombia/Geografía) y las 5 dieron opción múltiple, ninguna "completar". En el Reto Final (20 preguntas), exactamente 3 salieron en formato "completar" y el resto opción múltiple — dentro del rango de 2-3 pedido.
+Subido a GitHub → Vercel vuelve a desplegar automáticamente.
+
 ## Pendiente de fondo (no de esta sesión)
 1. Rutas 2 y 3 (Brasil/Cuba/Costa Rica, México/EE.UU./Canadá) ya tienen banco de preguntas real (2026-09-02, 792 preguntas). Falta: bandera SVG animada y foto de portada tipo Colombia/Perú/Chile — sesión de assets aparte.
 2. El recordatorio diario y su hora ahora se guardan de verdad (perfil → notificaciones), pero sigue sin haber push notifications reales (avisos aunque el usuario tenga la app cerrada) — pendiente de un proveedor real (ej. OneSignal/Web Push) + un cron que revise horarios, en una sesión aparte.
