@@ -838,6 +838,22 @@ El usuario pidió una sopa de letras temática por país (Colombia, Perú, Chile
 `npx tsc --noEmit` ✓ · `npm run build` ✓ (limpio, 3 rutas nuevas generadas) · `/app` sin sesión → `307` en producción real. Jugado de punta a punta en el navegador, los 3 niveles completos de Colombia: Explorador (5/5, sin necesitar el bug arriba), Descubridor (7/7 — encontró exactamente el bug de la celda compartida y quedó corregido en vivo), Experto (10/10, incluidas palabras colocadas al revés). Las monedas ganadas cuadraron exactas en cada nivel (20, luego 30, luego 50 — verificado sumando sobre el saldo real en `localStorage`, no solo la animación en pantalla).
 Subido a GitHub → Vercel vuelve a desplegar automáticamente.
 
+## Explora y Descubre: rediseño con contenido real + arrastrar el dedo (2026-09-08)
+El usuario compartió un documento propio ("50 Sopas de Letras.docx") con 50 temas de cultura general (7 palabras + 1 dato curioso cada uno, ya verificados por él) y pidió: (1) reemplazar los 6 temas de países por estos 50, (2) cambiar la interacción de "tocar primera y última letra" a **arrastrar el dedo** letra por letra, (3) que cada palabra encontrada quede con un **color distinto**, y (4) ajustar los tiempos: Explorador 70s, Descubridor 80s, Experto 90s con "mezclar la dinámica" (Experto combina TODAS las direcciones — horizontal, vertical, diagonal y al revés — en vez de solo invertidas).
+
+### Contenido
+Leído el .docx directo (Word Open XML, extraído y decodificado a UTF-8 con PowerShell ya que el proyecto no tiene la skill de lectura de docx disponible en esta sesión) — 50 temas reales con exactamente 7 palabras cada uno. Como el banco solo trae 7 (no 10), Experto también quedó en 7 palabras (todas), no en 10: se ajustó para no inventar palabras extra que el usuario no verificó.
+
+### Implementado
+- **`lib/sopa-letras-data.ts`**: reescrito con los 50 temas reales (campo `pais` renombrado a `tema`, ya no son solo países — Planetas, Egipto antiguo, Roma, Vikingos, Grandes pintores, etc.).
+- **`lib/sopa-letras-generador.ts`**: `SOPA_NIVELES` actualizado — Explorador 5 palabras/70s, Descubridor 7/80s, Experto 7/90s (direcciones ya incluían las 8 mezcladas, sin cambios ahí).
+- **Interacción rediseñada** en `[tema]/[dificultad]/page.tsx`: de "tocar dos extremos" a **arrastrar el dedo** con `pointerdown/pointermove/pointerup` sobre la rejilla, usando `document.elementFromPoint()` para detectar la celda bajo el dedo en cada movimiento (necesario porque el toque táctil captura el elemento inicial — este método evita ese problema). Cada palabra encontrada toma un color de una paleta de 8 tokens YA existentes en el sistema de diseño (los 6 colores de categoría + acento + dorado), sin inventar hex nuevos.
+- Las otras 2 pantallas (`sopa-letras/page.tsx`, `sopa-letras/[tema]/page.tsx`) actualizadas para usar `tema`/`temaDeNombre` en vez de `pais`/`temaDePais`.
+
+### Verificación
+`npx tsc --noEmit` ✓ · `npm run build` ✓ (limpio) · `/app` sin sesión → `307` en producción real. Generador probado con script aislado: 1500 pruebas (50 temas × 3 niveles × 10 repeticiones), 0 fallos. Confirmado en el navegador con arrastre REAL (`left_click_drag`, no solo eventos simulados por JS): encontré "VENUS" (vertical) y "MARTE" (horizontal) en el tema Planetas — cada una quedó pintada con un color distinto (teal y azul oscuro), tachada en la lista con su punto de color, y el contador avanzó correctamente (0/5 → 1/5 → 2/5). El cronómetro nuevo de 70s para Explorador confirmado en pantalla.
+Subido a GitHub → Vercel vuelve a desplegar automáticamente.
+
 ## Pendiente de fondo (no de esta sesión)
 1. Rutas 2 y 3 (Brasil/Cuba/Costa Rica, México/EE.UU./Canadá) ya tienen banco de preguntas real (2026-09-02, 792 preguntas). Falta: bandera SVG animada y foto de portada tipo Colombia/Perú/Chile — sesión de assets aparte.
 2. El recordatorio diario y su hora ahora se guardan de verdad (perfil → notificaciones), pero sigue sin haber push notifications reales (avisos aunque el usuario tenga la app cerrada) — pendiente de un proveedor real (ej. OneSignal/Web Push) + un cron que revise horarios, en una sesión aparte.

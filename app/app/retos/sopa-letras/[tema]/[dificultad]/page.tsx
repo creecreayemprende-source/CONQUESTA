@@ -8,7 +8,7 @@ import { useSound } from "@/lib/use-sound";
 import { SaldoMonedas } from "@/components/app/SaldoMonedas";
 import { Confetti } from "@/components/app/Confetti";
 import { CountUp } from "@/components/app/CountUp";
-import { temaDePais } from "@/lib/sopa-letras-data";
+import { temaDeNombre } from "@/lib/sopa-letras-data";
 import {
   generarSopa,
   palabrasPorNivel,
@@ -22,6 +22,20 @@ import {
 
 const RECOMPENSA_POR_NIVEL: Record<NivelSopa, number> = { Explorador: 20, Descubridor: 30, Experto: 50 };
 
+// Una paleta de colores YA existente en el sistema de diseño (las 6 categorías
+// + acento + dorado) — cada palabra encontrada toma el siguiente color de la
+// lista, así no hay que inventar hex nuevos.
+const PALETA_COLORES = [
+  "var(--cat-geografia)",
+  "var(--cat-historia)",
+  "var(--cat-cultura)",
+  "var(--cat-gastronomia)",
+  "var(--cat-naturaleza)",
+  "var(--cat-deportes)",
+  "var(--brand-primary)",
+  "var(--gold)",
+];
+
 function clave(c: Celda): string {
   return `${c.fila},${c.col}`;
 }
@@ -32,24 +46,25 @@ export default function SopaLetrasJuegoPage({
   params: Promise<{ tema: string; dificultad: string }>;
 }) {
   const { tema: temaParam, dificultad } = use(params);
-  const pais = decodeURIComponent(temaParam);
+  const nombreTema = decodeURIComponent(temaParam);
   const nivel = dificultad as NivelSopa;
   const router = useRouter();
   const { state, setState, guardarAhora } = useAppState();
   const { playCorrect, playIncorrect, playVictoria, playTiempoAgotado, playTick } = useSound();
 
-  const tema = temaDePais(pais);
+  const tema = temaDeNombre(nombreTema);
   const cfg = tema && nivel in SOPA_NIVELES ? SOPA_NIVELES[nivel] : null;
 
   const [sopa, setSopa] = useState<SopaGenerada | null>(null);
   const [palabras, setPalabras] = useState<string[]>([]);
-  const [encontradas, setEncontradas] = useState<Set<string>>(new Set());
-  const [celdasOk, setCeldasOk] = useState<Set<string>>(new Set());
-  const [inicio, setInicio] = useState<Celda | null>(null);
+  const [encontradas, setEncontradas] = useState<Map<string, string>>(new Map());
+  const [caminoActual, setCaminoActual] = useState<Celda[]>([]);
   const [celdasError, setCeldasError] = useState<Set<string>>(new Set());
-  const [tiempo, setTiempo] = useState(cfg?.segundos ?? 90);
+  const [tiempo, setTiempo] = useState(cfg?.segundos ?? 70);
   const [terminado, setTerminado] = useState(false);
   const [gano, setGano] = useState(false);
+  const arrastrandoRef = useRef(false);
+  const inicioRef = useRef<Celda | null>(null);
   const recompensaRef = useRef(false);
   const erroresTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -104,22 +119,43 @@ export default function SopaLetrasJuegoPage({
     erroresTimeoutRef.current = setTimeout(() => setCeldasError(new Set()), 400);
   }
 
-  function tocarCelda(celda: Celda) {
+  function celdaDesdeEvento(e: { clientX: number; clientY: number }): Celda | null {
+    const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
+    const objetivo = el?.closest("[data-fila]") as HTMLElement | null;
+    if (!objetivo) return null;
+    return { fila: Number(objetivo.dataset.fila), col: Number(objetivo.dataset.col) };
+  }
+
+  function iniciarArrastre(e: React.PointerEvent) {
     if (terminado || !sopa) return;
-    if (!inicio) {
-      setInicio(celda);
+    const celda = celdaDesdeEvento(e);
+    if (!celda) return;
+    arrastrandoRef.current = true;
+    inicioRef.current = celda;
+    setCaminoActual([celda]);
+  }
+
+  function continuarArrastre(e: React.PointerEvent) {
+    if (!arrastrandoRef.current || !inicioRef.current) return;
+    const celda = celdaDesdeEvento(e);
+    if (!celda) return;
+    const camino = celdasEntre(inicioRef.current, celda);
+    if (camino) setCaminoActual(camino);
+  }
+
+  function soltarArrastre() {
+    if (!arrastrandoRef.current || !sopa) {
+      arrastrandoRef.current = false;
+      inicioRef.current = null;
+      setCaminoActual([]);
       return;
     }
-    if (inicio.fila === celda.fila && inicio.col === celda.col) {
-      setInicio(null);
-      return;
-    }
-    const camino = celdasEntre(inicio, celda);
-    setInicio(null);
-    if (!camino) {
-      marcarError([inicio, celda]);
-      return;
-    }
+    arrastrandoRef.current = false;
+    inicioRef.current = null;
+
+    const camino = caminoActual;
+    setCaminoActual([]);
+    if (camino.length < 2) return;
 
     const palabraEncontrada = palabras.find((p) => !encontradas.has(p) && coincideSeleccion(camino, sopa.posiciones[p]));
     if (!palabraEncontrada) {
@@ -129,15 +165,17 @@ export default function SopaLetrasJuegoPage({
     }
 
     playCorrect();
-    const nuevasEncontradas = new Set(encontradas);
-    nuevasEncontradas.add(palabraEncontrada);
+    const color = PALETA_COLORES[encontradas.size % PALETA_COLORES.length];
+    const nuevasEncontradas = new Map(encontradas);
+    nuevasEncontradas.set(palabraEncontrada, color);
     setEncontradas(nuevasEncontradas);
-    setCeldasOk((prev) => {
-      const next = new Set(prev);
-      camino.forEach((c) => next.add(clave(c)));
-      return next;
-    });
     if (nuevasEncontradas.size === palabras.length) finalizar(true);
+  }
+
+  function cancelarArrastre() {
+    arrastrandoRef.current = false;
+    inicioRef.current = null;
+    setCaminoActual([]);
   }
 
   function reiniciar() {
@@ -145,11 +183,10 @@ export default function SopaLetrasJuegoPage({
     recompensaRef.current = false;
     setTerminado(false);
     setGano(false);
-    setEncontradas(new Set());
-    setCeldasOk(new Set());
+    setEncontradas(new Map());
+    setCaminoActual([]);
     setCeldasError(new Set());
-    setInicio(null);
-    setTiempo(cfg?.segundos ?? 90);
+    setTiempo(cfg?.segundos ?? 70);
     const ps = palabrasPorNivel(tema.palabras, nivel);
     setPalabras(ps);
     setSopa(generarSopa(ps, nivel));
@@ -201,29 +238,39 @@ export default function SopaLetrasJuegoPage({
           </button>
           <button
             type="button"
-            onClick={() => router.push(`/app/retos/sopa-letras/${encodeURIComponent(pais)}`)}
+            onClick={() => router.push(`/app/retos/sopa-letras/${encodeURIComponent(nombreTema)}`)}
             className="flex h-14 items-center justify-center rounded-lg bg-brand-primary font-display text-base font-bold text-white transition-transform duration-200 ease-out hover:-translate-y-0.5"
           >
-            Volver a {pais}
+            Volver a {nombreTema}
           </button>
         </div>
       </div>
     );
   }
 
+  // Color de cada celda que ya forma parte de una palabra encontrada (una
+  // palabra = un color, tomado de encontradas). Superposiciones entre
+  // palabras se resuelven con la última encontrada.
+  const celdaColor: Record<string, string> = {};
+  encontradas.forEach((color, palabra) => {
+    sopa.posiciones[palabra].forEach((c) => {
+      celdaColor[clave(c)] = color;
+    });
+  });
+
   return (
     <div className="flex min-h-dvh flex-col px-4 pt-4">
       <div className="flex items-center justify-between gap-3">
         <button
           type="button"
-          onClick={() => router.push(`/app/retos/sopa-letras/${encodeURIComponent(pais)}`)}
+          onClick={() => router.push(`/app/retos/sopa-letras/${encodeURIComponent(nombreTema)}`)}
           aria-label="Volver"
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-txt-secondary"
         >
           <ChevronLeft className="h-5 w-5" strokeWidth={2.4} />
         </button>
         <p className="flex-1 text-center text-xs font-semibold uppercase tracking-wide text-txt-tertiary">
-          {pais} · {nivel} · {encontradas.size}/{palabras.length}
+          {nombreTema} · {nivel} · {encontradas.size}/{palabras.length}
         </p>
         <SaldoMonedas monedas={state.coins} />
       </div>
@@ -232,51 +279,60 @@ export default function SopaLetrasJuegoPage({
 
       <div className="mt-3 flex justify-center">
         <div
-          className="grid gap-0.5"
+          className="grid touch-none select-none gap-0.5"
           style={{ gridTemplateColumns: `repeat(${sopa.tamano}, minmax(0, 1fr))`, width: "100%", maxWidth: 360 }}
+          onPointerDown={iniciarArrastre}
+          onPointerMove={continuarArrastre}
+          onPointerUp={soltarArrastre}
+          onPointerCancel={cancelarArrastre}
         >
           {sopa.grid.map((fila, f) =>
             fila.map((letra, c) => {
               const k = clave({ fila: f, col: c });
-              const seleccionada = inicio !== null && inicio.fila === f && inicio.col === c;
-              const ok = celdasOk.has(k);
+              const color = celdaColor[k];
+              const enCamino = caminoActual.some((cc) => cc.fila === f && cc.col === c);
               const error = celdasError.has(k);
               return (
-                <button
+                <div
                   key={k}
-                  type="button"
-                  onClick={() => tocarCelda({ fila: f, col: c })}
+                  data-fila={f}
+                  data-col={c}
                   className={`flex aspect-square items-center justify-center rounded-sm font-display text-xs font-bold uppercase transition-colors duration-150 ${
-                    ok
-                      ? "bg-status-success-soft text-status-success"
+                    color
+                      ? "text-white"
                       : error
                         ? "bg-status-error-soft text-status-error"
-                        : seleccionada
+                        : enCamino
                           ? "bg-brand-primary text-white"
                           : "bg-surface-secondary text-txt-primary"
                   }`}
+                  style={color ? { backgroundColor: color } : undefined}
                 >
                   {letra}
-                </button>
+                </div>
               );
             })
           )}
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap justify-center gap-2 pb-4">
-        {palabras.map((p) => (
-          <span
-            key={p}
-            className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-              encontradas.has(p)
-                ? "border-status-success bg-status-success-soft text-status-success line-through"
-                : "border-border-default bg-surface-primary text-txt-primary"
-            }`}
-          >
-            {p}
-          </span>
-        ))}
+      <p className="mt-2 text-center text-xs text-txt-tertiary">Desliza el dedo sobre las letras para marcarlas</p>
+
+      <div className="mt-3 flex flex-wrap justify-center gap-2 pb-4">
+        {palabras.map((p) => {
+          const color = encontradas.get(p);
+          return (
+            <span
+              key={p}
+              className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
+                color ? "border-border-default bg-surface-primary text-txt-tertiary line-through" : "border-border-default bg-surface-primary text-txt-primary"
+              }`}
+            >
+              {color && <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: color }} />}
+              {p}
+            </span>
+          );
+        })}
       </div>
     </div>
   );

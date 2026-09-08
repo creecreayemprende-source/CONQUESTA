@@ -20,12 +20,14 @@ const DIRECCIONES: Record<string, Direccion> = {
 
 /** Config de cada nivel: cuántas palabras, tiempo, y qué direcciones se
  * permiten al colocarlas — Explorador solo horizontal/vertical "hacia
- * adelante"; Descubridor suma diagonales; Experto suma las 4 direcciones
- * invertidas (palabras "al revés"). */
+ * adelante"; Descubridor suma diagonales; Experto mezcla TODO (incluidas las
+ * 4 direcciones invertidas, palabras "al revés"). Cada tema del banco trae
+ * exactamente 7 palabras — Explorador usa las 5 más cortas, Descubridor y
+ * Experto usan las 7. */
 export const SOPA_NIVELES: Record<NivelSopa, { cantidad: number; segundos: number; direcciones: (keyof typeof DIRECCIONES)[] }> = {
-  Explorador: { cantidad: 5, segundos: 90, direcciones: ["E", "S"] },
+  Explorador: { cantidad: 5, segundos: 70, direcciones: ["E", "S"] },
   Descubridor: { cantidad: 7, segundos: 80, direcciones: ["E", "S", "SE", "SO"] },
-  Experto: { cantidad: 10, segundos: 80, direcciones: ["E", "S", "SE", "SO", "O", "N", "NO", "NE"] },
+  Experto: { cantidad: 7, segundos: 90, direcciones: ["E", "S", "SE", "SO", "O", "N", "NO", "NE"] },
 };
 
 /** Ordena de más corta a más larga y recorta a la cantidad del nivel — así el
