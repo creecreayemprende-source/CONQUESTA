@@ -810,6 +810,20 @@ El usuario probó el formato mixto recién construido y frenó a tiempo: en las 
 `npx tsc --noEmit` ✓ · `npm run build` ✓ (limpio) · `/app` sin sesión → `307` en producción real. Confirmado en el navegador: jugué las 5 preguntas de Explorador (Colombia/Geografía) y las 5 dieron opción múltiple, ninguna "completar". En el Reto Final (20 preguntas), exactamente 3 salieron en formato "completar" y el resto opción múltiple — dentro del rango de 2-3 pedido.
 Subido a GitHub → Vercel vuelve a desplegar automáticamente.
 
+## Nuevo reto: Juego de Luces (Simón dice) (2026-09-05)
+El usuario pidió un juego de memoria de secuencias de luces/colores (estilo "Simón dice") como nuevo reto: el juego reproduce una secuencia de colores que crece un paso por nivel superado, el jugador debe repetirla en el mismo orden, cada nivel superado da monedas, y el mejor nivel alcanzado se guarda de forma permanente.
+
+### Implementado
+- **`app/app/retos/luces/page.tsx`** (nuevo): 4 colores fijos (rojo/verde/azul/amarillo), secuencia que crece de a 1 por nivel superado, velocidad de reproducción que sube ligeramente con el nivel (piso de 350ms para no volverse imposible). 5 monedas por cada nivel superado. Al fallar, muestra el nivel alcanzado, compara contra el récord personal, y da la opción de reintentar.
+- **`lib/app-state.ts`** (bump v11→v12): campo nuevo `mejorNivelLuces: number`.
+- **`lib/supabase/queries.ts`** + migración `0013_mejor_nivel_luces.sql` (aplicada): columna `mejor_nivel_luces` en `profiles`, con el mismo candado anti-retroceso de `monedas_ganadas_total`/`progreso_pais` (0011/0012) — el récord solo puede subir, nunca bajar por un guardado con datos viejos.
+- Nueva tarjeta en la pantalla de Retos (mismo estilo que Cultura General y Ahorcado) y ruta agregada a `esRutaDeJuego()` en `BottomNav.tsx` para ocultar la navegación mientras se juega.
+- El récord se guarda de inmediato con `guardarAhora()` (mismo patrón anti-pérdida del Reto Final) cuando el jugador establece un nuevo récord personal.
+
+### Verificación
+`npx tsc --noEmit` ✓ · `npm run build` ✓ (limpio, ruta `/app/retos/luces` generada) · `/app` sin sesión → `307` en producción real. Confirmado en el navegador: perder en el nivel 1 muestra "Esta vez no" sin subir el récord; acertar la secuencia avanza correctamente de nivel en nivel (probado hasta nivel 4); los números finales de una partida (monedas ganadas, récord guardado) cuadran matemáticamente con los niveles superados. Trigger anti-retroceso probado contra la base real: un intento de bajar el récord de 10 a 2 quedó bloqueado.
+Subido a GitHub → Vercel vuelve a desplegar automáticamente.
+
 ## Pendiente de fondo (no de esta sesión)
 1. Rutas 2 y 3 (Brasil/Cuba/Costa Rica, México/EE.UU./Canadá) ya tienen banco de preguntas real (2026-09-02, 792 preguntas). Falta: bandera SVG animada y foto de portada tipo Colombia/Perú/Chile — sesión de assets aparte.
 2. El recordatorio diario y su hora ahora se guardan de verdad (perfil → notificaciones), pero sigue sin haber push notifications reales (avisos aunque el usuario tenga la app cerrada) — pendiente de un proveedor real (ej. OneSignal/Web Push) + un cron que revise horarios, en una sesión aparte.

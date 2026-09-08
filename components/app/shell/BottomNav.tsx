@@ -25,6 +25,7 @@ function esRutaDeJuego(pathname: string): boolean {
     pathname.startsWith("/app/jugar/") ||
     pathname === "/app/retos/desafio" ||
     pathname === "/app/retos/ahorcado" ||
+    pathname === "/app/retos/luces" ||
     pathname.startsWith("/app/retos/1v1/")
   );
 }

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAppState } from "@/lib/app-state-context";
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { Send, Swords, Type, Trophy, Hourglass, Check } from "lucide-react";
+import { Send, Swords, Type, Trophy, Hourglass, Check, Lightbulb } from "lucide-react";
 
 interface RetoRow {
   id: string;
@@ -90,6 +90,19 @@ export default function RetosPage() {
         </span>
         <p className="text-xs text-txt-secondary">
           Adivina la ciudad oculta letra por letra, con una pista — ciudades de todo el mundo
+        </p>
+      </Link>
+
+      <Link
+        href="/app/retos/luces"
+        className="flex flex-col items-center gap-2 rounded-xl border-2 border-brand-primary bg-surface-primary p-4 text-center shadow-sm"
+      >
+        <span className="flex items-center gap-2 font-display text-base font-bold text-txt-primary">
+          <Lightbulb className="h-4 w-4 text-brand-primary" strokeWidth={2.2} />
+          Juego de Luces
+        </span>
+        <p className="text-xs text-txt-secondary">
+          Memoriza la secuencia de colores y repítela — sube de nivel, gana monedas
         </p>
       </Link>
 

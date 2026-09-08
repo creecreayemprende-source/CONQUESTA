@@ -37,11 +37,13 @@ export interface Inventario {
 }
 
 export interface AppState {
-  v: 11;
+  v: 12;
   nombre: string;
   avatarUrl: string | null;
   recordatorioDiario: boolean;
   horaRecordatorio: string | null; // ej. "8:00 AM" — a qué hora quiere el aviso (elegida en onboarding o en Perfil)
+  // Mejor nivel alcanzado en el juego de luces (Simón dice) — solo sube, nunca baja.
+  mejorNivelLuces: number;
   coins: number;
   // Contador que SOLO sube — a diferencia de `coins` (el saldo, que baja al
   // gastar en la Tienda), esto mide actividad real para el Ranking: alguien
@@ -67,7 +69,7 @@ export interface AppState {
   graceEndsAt: string | null; // ISO — hasta cuándo hay gracia si el pago falló
 }
 
-const KEY = "conquesta_app_state_v11";
+const KEY = "conquesta_app_state_v12";
 
 function rondaVacia(): RondaEstado {
   return { completado: false, aciertos: 0, total: 0 };
@@ -92,11 +94,12 @@ export function progresoPaisVacio(): ProgresoPais {
 // quedaría inconsistente con lo que el usuario en verdad jugó.
 function estadoInicial(): AppState {
   return {
-    v: 11,
+    v: 12,
     nombre: "Sofía",
     avatarUrl: null,
     recordatorioDiario: false,
     horaRecordatorio: null,
+    mejorNivelLuces: 0,
     coins: 0,
     monedasGanadasTotal: 0,
     gems: 0,
@@ -125,7 +128,7 @@ export function loadAppState(): AppState {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return estadoInicial();
     const parsed = JSON.parse(raw);
-    if (parsed?.v !== 11) return estadoInicial();
+    if (parsed?.v !== 12) return estadoInicial();
     return parsed as AppState;
   } catch {
     return estadoInicial();
