@@ -115,7 +115,7 @@ export default function RetosPage() {
           Explora y Descubre
         </span>
         <p className="text-xs text-txt-secondary">
-          Sopa de letras por país — encuentra las palabras y llévate un dato curioso
+          Sopa de letras de cultura general — encuentra las palabras y llévate un dato curioso
         </p>
       </Link>
 

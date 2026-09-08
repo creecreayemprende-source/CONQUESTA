@@ -1,5 +1,3 @@
-export type NivelSopa = "Explorador" | "Descubridor" | "Experto";
-
 export interface Celda {
   fila: number;
   col: number;
@@ -18,23 +16,9 @@ const DIRECCIONES: Record<string, Direccion> = {
   NE: { dr: -1, dc: 1 },
 };
 
-/** Config de cada nivel: cuántas palabras, tiempo, y qué direcciones se
- * permiten al colocarlas — Explorador solo horizontal/vertical "hacia
- * adelante"; Descubridor suma diagonales; Experto mezcla TODO (incluidas las
- * 4 direcciones invertidas, palabras "al revés"). Cada tema del banco trae
- * exactamente 7 palabras — Explorador usa las 5 más cortas, Descubridor y
- * Experto usan las 7. */
-export const SOPA_NIVELES: Record<NivelSopa, { cantidad: number; segundos: number; direcciones: (keyof typeof DIRECCIONES)[] }> = {
-  Explorador: { cantidad: 5, segundos: 70, direcciones: ["E", "S"] },
-  Descubridor: { cantidad: 7, segundos: 80, direcciones: ["E", "S", "SE", "SO"] },
-  Experto: { cantidad: 7, segundos: 90, direcciones: ["E", "S", "SE", "SO", "O", "N", "NO", "NE"] },
-};
-
-/** Ordena de más corta a más larga y recorta a la cantidad del nivel — así el
- * nivel fácil siempre trabaja con las palabras (y la rejilla) más chicas. */
-export function palabrasPorNivel(palabras: string[], nivel: NivelSopa): string[] {
-  return [...palabras].sort((a, b) => a.length - b.length).slice(0, SOPA_NIVELES[nivel].cantidad);
-}
+/** Todas las direcciones mezcladas (horizontal, vertical, diagonal y al
+ * revés) — cada sopa las combina libremente, sin niveles de dificultad. */
+const TODAS_LAS_DIRECCIONES = Object.keys(DIRECCIONES) as (keyof typeof DIRECCIONES)[];
 
 export interface SopaGenerada {
   grid: string[][];
@@ -90,8 +74,7 @@ function intentarColocar(
 
 /** Genera la rejilla: coloca las palabras más largas primero (empacan mejor),
  * reintentando con una rejilla más grande si alguna no logra ubicarse. */
-export function generarSopa(palabras: string[], nivel: NivelSopa): SopaGenerada {
-  const direcciones = SOPA_NIVELES[nivel].direcciones;
+export function generarSopa(palabras: string[], direcciones: (keyof typeof DIRECCIONES)[] = TODAS_LAS_DIRECCIONES): SopaGenerada {
   const masLarga = Math.max(...palabras.map((p) => p.length));
   const ordenadas = [...palabras].sort((a, b) => b.length - a.length);
 

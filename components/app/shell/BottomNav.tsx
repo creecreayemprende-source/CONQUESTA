@@ -26,10 +26,8 @@ function esRutaDeJuego(pathname: string): boolean {
     pathname === "/app/retos/desafio" ||
     pathname === "/app/retos/ahorcado" ||
     pathname === "/app/retos/luces" ||
-    pathname.startsWith("/app/retos/1v1/") ||
-    // /app/retos/sopa-letras/[tema]/[dificultad] es la pantalla de juego real;
-    // /app/retos/sopa-letras y /app/retos/sopa-letras/[tema] son solo menús.
-    /^\/app\/retos\/sopa-letras\/[^/]+\/[^/]+$/.test(pathname)
+    pathname === "/app/retos/sopa-letras" ||
+    pathname.startsWith("/app/retos/1v1/")
   );
 }
 

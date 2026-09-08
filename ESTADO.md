@@ -854,6 +854,20 @@ Leído el .docx directo (Word Open XML, extraído y decodificado a UTF-8 con Pow
 `npx tsc --noEmit` ✓ · `npm run build` ✓ (limpio) · `/app` sin sesión → `307` en producción real. Generador probado con script aislado: 1500 pruebas (50 temas × 3 niveles × 10 repeticiones), 0 fallos. Confirmado en el navegador con arrastre REAL (`left_click_drag`, no solo eventos simulados por JS): encontré "VENUS" (vertical) y "MARTE" (horizontal) en el tema Planetas — cada una quedó pintada con un color distinto (teal y azul oscuro), tachada en la lista con su punto de color, y el contador avanzó correctamente (0/5 → 1/5 → 2/5). El cronómetro nuevo de 70s para Explorador confirmado en pantalla.
 Subido a GitHub → Vercel vuelve a desplegar automáticamente.
 
+## Explora y Descubre: flujo simplificado a una sola pantalla (2026-09-08)
+El usuario pidió simplificar todo: sin lista de temas, sin niveles Explorador/Descubridor/Experto — al entrar a "Explora y Descubre" ya aparece la sopa de letras (tema al azar), y al completarla sale el dato curioso con "Continuar" (asigna otro tema al azar y gana monedas) o "Volver a Retos".
+
+### Implementado
+- Eliminadas las rutas `sopa-letras/[tema]` y `sopa-letras/[tema]/[dificultad]` — todo vive en una sola pantalla `app/app/retos/sopa-letras/page.tsx`.
+- Al entrar, se elige un tema al azar de los 50 y se genera la sopa (7 palabras, 80 segundos, todas las direcciones mezcladas — sin exponer "niveles"). Recompensa fija: 30 monedas por sopa completada.
+- Al ganar: dato curioso + botón "Continuar" (asigna un tema nuevo al azar, nunca repite el que se acaba de jugar) — al perder por tiempo: "Intentar de nuevo" (mismo tema, rejilla nueva). Ambos casos tienen "Volver a Retos".
+- `lib/sopa-letras-generador.ts` simplificado: se quitó el concepto de `NivelSopa`/`SOPA_NIVELES` — `generarSopa()` ahora mezcla las 8 direcciones por defecto (sin necesidad de indicar dificultad).
+- `BottomNav.tsx` y la tarjeta de Retos actualizados para la ruta única.
+
+### Verificación
+`npx tsc --noEmit` ✓ (vía `npm run build`, que regenera los tipos de rutas de Next) · `npm run build` ✓ (limpio) · `/app` sin sesión → `307` en producción real. Confirmado en el navegador con arrastre real: entré directo a "Planetas · 0/7" (sin pantallas intermedias), encontré las 7 palabras arrastrando, salió "¡Sopa completada!" con el dato de Júpiter y el botón "Continuar" (no "Intentar de nuevo") — las monedas subieron exactamente 30, y "Continuar" asignó un tema distinto ("Premios Nobel") de inmediato.
+Subido a GitHub → Vercel vuelve a desplegar automáticamente.
+
 ## Pendiente de fondo (no de esta sesión)
 1. Rutas 2 y 3 (Brasil/Cuba/Costa Rica, México/EE.UU./Canadá) ya tienen banco de preguntas real (2026-09-02, 792 preguntas). Falta: bandera SVG animada y foto de portada tipo Colombia/Perú/Chile — sesión de assets aparte.
 2. El recordatorio diario y su hora ahora se guardan de verdad (perfil → notificaciones), pero sigue sin haber push notifications reales (avisos aunque el usuario tenga la app cerrada) — pendiente de un proveedor real (ej. OneSignal/Web Push) + un cron que revise horarios, en una sesión aparte.

@@ -1,8 +1,6 @@
 export interface TemaSopaLetras {
   tema: string;
-  /** Palabras SIN tildes (convención de sopa de letras) — el orden en este
-   * array no importa, `palabrasPorNivel()` siempre las ordena de más corta a
-   * más larga antes de recortar por dificultad. */
+  /** Las 7 palabras del tema, SIN tildes (convención de sopa de letras). */
   palabras: string[];
   sabiasQue: string;
 }
@@ -62,7 +60,3 @@ export const TEMAS_SOPA_LETRAS: TemaSopaLetras[] = [
   { tema: "Grandes ciudades", palabras: ["TOKIO", "PARIS", "LONDRES", "NUEVAYORK", "CAIRO", "ROMA", "SIDNEY"], sabiasQue: "Tokio es una de las mayores áreas metropolitanas del mundo." },
   { tema: "Curiosidades del mundo", palabras: ["PIRAMIDE", "VOLCAN", "DESIERTO", "ISLA", "GLACIAR", "ARRECIFE", "CATARATA"], sabiasQue: "El agua cubre aproximadamente el 71% de la superficie de la Tierra." },
 ];
-
-export function temaDeNombre(nombre: string): TemaSopaLetras | undefined {
-  return TEMAS_SOPA_LETRAS.find((t) => t.tema === nombre);
-}
