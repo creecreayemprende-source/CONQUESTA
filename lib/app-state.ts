@@ -37,7 +37,7 @@ export interface Inventario {
 }
 
 export interface AppState {
-  v: 13;
+  v: 14;
   nombre: string;
   avatarUrl: string | null;
   recordatorioDiario: boolean;
@@ -74,6 +74,13 @@ export interface AppState {
   // Ids de retos_1v1 donde ya se le pagó al retador el bono de victoria —
   // evita pagarlo de nuevo cada vez que vuelve a ver el resultado.
   retosGanadosNotificados: string[];
+  // Medallas del Ranking Semanal ("cofre" del top 3) que ya ganó alguna vez —
+  // 'oro'|'plata'|'bronce', se otorgan una sola vez por cuenta (servidor,
+  // vía el cron `cerrar_semana_ranking`, nunca el cliente).
+  souvenirsSemanalesGanados: string[];
+  // Medalla recién otorgada por el cron, pendiente de mostrar el modal de
+  // celebración — la limpia el cliente (a null) apenas la muestra.
+  medallaSemanalPendiente: string | null;
   // Membresía real (Sesión 6): estos 3 campos solo los escribe el webhook de
   // Hotmart en el servidor — el navegador nunca los puede editar (columnas
   // bloqueadas por permiso en la base de datos, ver 0003_hotmart_membership.sql).
@@ -82,7 +89,7 @@ export interface AppState {
   graceEndsAt: string | null; // ISO — hasta cuándo hay gracia si el pago falló
 }
 
-const KEY = "conquesta_app_state_v13";
+const KEY = "conquesta_app_state_v14";
 
 function rondaVacia(): RondaEstado {
   return { completado: false, aciertos: 0, total: 0 };
@@ -107,7 +114,7 @@ export function progresoPaisVacio(): ProgresoPais {
 // quedaría inconsistente con lo que el usuario en verdad jugó.
 function estadoInicial(): AppState {
   return {
-    v: 13,
+    v: 14,
     nombre: "Sofía",
     avatarUrl: null,
     recordatorioDiario: false,
@@ -133,6 +140,8 @@ function estadoInicial(): AppState {
     musicaSilenciada: false,
     tipAcelerarVisto: false,
     retosGanadosNotificados: [],
+    souvenirsSemanalesGanados: [],
+    medallaSemanalPendiente: null,
     membershipStatus: "free",
     accessUntil: null,
     graceEndsAt: null,
@@ -145,7 +154,7 @@ export function loadAppState(): AppState {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return estadoInicial();
     const parsed = JSON.parse(raw);
-    if (parsed?.v !== 13) return estadoInicial();
+    if (parsed?.v !== 14) return estadoInicial();
     return parsed as AppState;
   } catch {
     return estadoInicial();
@@ -315,6 +324,12 @@ export function registrarActividad(state: AppState, hoy: string): AppState {
 /** El modal de celebración ya se mostró — libera el hito pendiente. */
 export function limpiarHitoRachaPendiente(state: AppState): AppState {
   return { ...state, hitoRachaPendienteDeMostrar: null };
+}
+
+/** El modal del cofre semanal ya se mostró — libera la medalla pendiente
+ * (la otorga el cron `cerrar_semana_ranking`, nunca el cliente). */
+export function limpiarMedallaSemanalPendiente(state: AppState): AppState {
+  return { ...state, medallaSemanalPendiente: null };
 }
 
 /** Aplica al estado REAL de la app lo que el usuario ganó/eligió durante el

@@ -10,6 +10,7 @@ import { rutaDelPais } from "@/lib/rutas-data";
 import { Flame, Gem, Coins, LogOut, Settings, Volume2, VolumeX, Camera, Pencil, Check } from "lucide-react";
 import { PassportStamp, type EstadoSello } from "@/components/app/PassportStamp";
 import { SouvenirVitrina } from "@/components/app/SouvenirVitrina";
+import { TrofeosSemanales } from "@/components/app/TrofeosSemanales";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { subirAvatar } from "@/lib/supabase/storage";
 
@@ -169,6 +170,8 @@ export default function PerfilPage() {
           (p) => p.nombre
         )}
       />
+
+      <TrofeosSemanales medallasGanadas={state.souvenirsSemanalesGanados} />
 
       <Link
         href="/app/perfil/notificaciones"
