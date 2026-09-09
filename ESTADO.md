@@ -919,6 +919,9 @@ El usuario pidió: un enunciado llamativo arriba de Retos explicando qué se gan
 ### Verificación
 `npx tsc --noEmit` ✓ · `npm run build` ✓. Confirmado en el navegador (dev server real, `AUDIT_BYPASS_AUTH` usado y revertido): el banner nuevo se ve llamativo arriba de Retos, el orden de tarjetas quedó Ahorcado → Luces → Sopa de letras → Reto de Cultura General → pestañas, y el estado vacío de "Tu turno" muestra el botón "Retar a un amigo" funcionando (probado forzando `retos=[]` temporalmente en el código para simular la vista sin sesión real, revertido después de la captura — no quedó código de prueba). La sopa de letras ("Grandes Inventos") renderizó con letras visiblemente más grandes en una rejilla de 9×9.
 
+## Sopa de letras: 80s → 100s (2026-09-09)
+El usuario pidió más tiempo para encontrar las 7 palabras. `SOPA_SEGUNDOS` en `app/app/retos/sopa-letras/page.tsx`: 80 → 100. Verificado: `tsc` ✓ · `build` ✓ (cambio de una constante, sin riesgo visual).
+
 ## Pendiente de fondo (no de esta sesión)
 1. Rutas 2 y 3 (Brasil/Cuba/Costa Rica, México/EE.UU./Canadá) ya tienen banco de preguntas real (2026-09-02, 792 preguntas). Falta: bandera SVG animada y foto de portada tipo Colombia/Perú/Chile — sesión de assets aparte.
 2. El recordatorio diario y su hora ahora se guardan de verdad (perfil → notificaciones), pero sigue sin haber push notifications reales (avisos aunque el usuario tenga la app cerrada) — pendiente de un proveedor real (ej. OneSignal/Web Push) + un cron que revise horarios, en una sesión aparte.

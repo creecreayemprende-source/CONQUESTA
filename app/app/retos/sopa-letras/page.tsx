@@ -11,7 +11,7 @@ import { CountUp } from "@/components/app/CountUp";
 import { TEMAS_SOPA_LETRAS, type TemaSopaLetras } from "@/lib/sopa-letras-data";
 import { generarSopa, celdasEntre, coincideSeleccion, type SopaGenerada, type Celda } from "@/lib/sopa-letras-generador";
 
-const SOPA_SEGUNDOS = 80;
+const SOPA_SEGUNDOS = 100;
 const SOPA_MONEDAS = 40;
 
 // Una paleta de colores YA existente en el sistema de diseño (las 6 categorías
