@@ -2,21 +2,27 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Crown, Trophy, Coins } from "lucide-react";
+import { Crown, Trophy, Coins, Flag, Award } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 interface FilaRanking {
   nombre: string;
   avatar_url: string | null;
-  monedas_ganadas_total: number;
+  valor: number;
   paises_conquistados: number;
+  insignias: number;
   es_actual: boolean;
 }
 
+// Cada período mide algo distinto (pedido explícito): Semanal/Mensual son
+// monedas ganadas DENTRO de ese período (con reinicio real, no solo una
+// ventana móvil de N días) — le da a un jugador nuevo la chance real de
+// quedar 1º en su primera semana. General es la "Liga de Leyendas": países
+// conquistados + insignias ganadas, la constancia de largo plazo.
 const PERIODOS = [
-  { label: "Semanal", dias: 7 },
-  { label: "Mensual", dias: 30 },
-  { label: "General", dias: null },
+  { key: "semanal", label: "Semanal", subtitulo: "Monedas ganadas esta semana — se reinicia cada domingo" },
+  { key: "mensual", label: "Mensual", subtitulo: "Monedas ganadas este mes — premia la constancia" },
+  { key: "general", label: "General", subtitulo: "Países conquistados + insignias — la Liga de Leyendas" },
 ] as const;
 
 const PODIO: Record<1 | 2 | 3, { color: string; avatar: string; barra: string }> = {
@@ -36,7 +42,7 @@ export default function RankingPage() {
     setError(false);
     (async () => {
       try {
-        const { data, error } = await supabaseBrowser().rpc("ranking_paises_conquistados", { p_dias: periodo.dias });
+        const { data, error } = await supabaseBrowser().rpc("ranking_jugadores", { p_periodo: periodo.key });
         if (cancelado) return;
         if (error) {
           setError(true);
@@ -58,18 +64,18 @@ export default function RankingPage() {
         <Image src="/logo/conquesta-logo-full.png" alt="Conquesta" width={140} height={154} className="h-16 w-auto" priority />
         <div>
           <h1 className="font-display text-xl font-bold text-txt-primary">Ranking</h1>
-          <p className="text-sm text-txt-secondary">Países conquistados por jugador real</p>
+          <p className="text-sm text-txt-secondary">{periodo.subtitulo}</p>
         </div>
       </div>
 
       <div className="flex gap-2">
         {PERIODOS.map((p) => (
           <button
-            key={p.label}
+            key={p.key}
             type="button"
             onClick={() => setPeriodo(p)}
             className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-colors duration-200 ease-out ${
-              periodo.label === p.label ? "bg-brand-primary text-white" : "bg-surface-secondary text-txt-secondary"
+              periodo.key === p.key ? "bg-brand-primary text-white" : "bg-surface-secondary text-txt-secondary"
             }`}
           >
             {p.label}
@@ -94,8 +100,12 @@ export default function RankingPage() {
       {!error && filas !== null && filas.length === 0 && (
         <div className="rounded-2xl border border-border-default bg-surface-primary p-6 text-center">
           <Trophy className="mx-auto mb-2 h-8 w-8 text-txt-tertiary" strokeWidth={1.8} />
-          <p className="text-sm font-semibold text-txt-primary">Todavía no hay conquistas registradas</p>
-          <p className="mt-1 text-xs text-txt-secondary">Conquista tu primer país y aparecerás aquí.</p>
+          <p className="text-sm font-semibold text-txt-primary">
+            {periodo.key === "general" ? "Todavía no hay conquistas registradas" : "Todavía nadie ganó monedas en este período"}
+          </p>
+          <p className="mt-1 text-xs text-txt-secondary">
+            {periodo.key === "general" ? "Conquista tu primer país y aparecerás aquí." : "Juega un Reto o una ronda y aparecerás aquí."}
+          </p>
         </div>
       )}
 
@@ -122,13 +132,23 @@ export default function RankingPage() {
                       )}
                     </span>
                     <p className="max-w-16 truncate text-xs font-semibold text-txt-primary">{j.es_actual ? "Tú" : j.nombre}</p>
-                    <p className="text-xs font-bold tabular text-txt-tertiary">
-                      {j.paises_conquistados} país{j.paises_conquistados === 1 ? "" : "es"}
-                    </p>
-                    <p className="flex items-center gap-0.5 text-xs font-semibold tabular text-gold">
-                      <Coins className="h-3 w-3" strokeWidth={2.4} />
-                      {j.monedas_ganadas_total}
-                    </p>
+                    {periodo.key === "general" ? (
+                      <>
+                        <p className="flex items-center gap-0.5 text-xs font-bold tabular text-txt-tertiary">
+                          <Flag className="h-3 w-3" strokeWidth={2.4} />
+                          {j.paises_conquistados} país{j.paises_conquistados === 1 ? "" : "es"}
+                        </p>
+                        <p className="flex items-center gap-0.5 text-xs font-semibold tabular text-gold">
+                          <Award className="h-3 w-3" strokeWidth={2.4} />
+                          {j.insignias} insignia{j.insignias === 1 ? "" : "s"}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="flex items-center gap-0.5 text-xs font-semibold tabular text-gold">
+                        <Coins className="h-3 w-3" strokeWidth={2.4} />
+                        {j.valor}
+                      </p>
+                    )}
                     <div className={`flex flex-col items-center justify-start rounded-t-lg pt-1.5 ${cfg.color} ${cfg.barra}`}>
                       <span className="font-display text-xl font-extrabold text-white">{posicion}</span>
                     </div>
@@ -162,13 +182,22 @@ export default function RankingPage() {
                     {j.es_actual ? "Tú" : j.nombre}
                   </p>
                   <p className="flex items-center gap-1.5 text-xs text-txt-tertiary">
-                    <span>
-                      {j.paises_conquistados} país{j.paises_conquistados === 1 ? "" : "es"} completados
-                    </span>
-                    <span className="flex items-center gap-0.5 font-semibold text-gold">
-                      <Coins className="h-3 w-3" strokeWidth={2.4} />
-                      {j.monedas_ganadas_total}
-                    </span>
+                    {periodo.key === "general" ? (
+                      <>
+                        <span>
+                          {j.paises_conquistados} país{j.paises_conquistados === 1 ? "" : "es"} completados
+                        </span>
+                        <span className="flex items-center gap-0.5 font-semibold text-gold">
+                          <Award className="h-3 w-3" strokeWidth={2.4} />
+                          {j.insignias} insignia{j.insignias === 1 ? "" : "s"}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="flex items-center gap-0.5 font-semibold text-gold">
+                        <Coins className="h-3 w-3" strokeWidth={2.4} />
+                        {j.valor} monedas
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>
