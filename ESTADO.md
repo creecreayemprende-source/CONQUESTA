@@ -919,6 +919,10 @@ El usuario pidió: un enunciado llamativo arriba de Retos explicando qué se gan
 ### Verificación
 `npx tsc --noEmit` ✓ · `npm run build` ✓. Confirmado en el navegador (dev server real, `AUDIT_BYPASS_AUTH` usado y revertido): el banner nuevo se ve llamativo arriba de Retos, el orden de tarjetas quedó Ahorcado → Luces → Sopa de letras → Reto de Cultura General → pestañas, y el estado vacío de "Tu turno" muestra el botón "Retar a un amigo" funcionando (probado forzando `retos=[]` temporalmente en el código para simular la vista sin sesión real, revertido después de la captura — no quedó código de prueba). La sopa de letras ("Grandes Inventos") renderizó con letras visiblemente más grandes en una rejilla de 9×9.
 
+## Pista del explorador: de Gemas a Monedas (2026-09-09)
+El usuario notó que la Tienda seguía cobrando la ayuda "Pista" en Gemas — una inconsistencia real que quedó de antes del reajuste de economía: las Gemas ya son moneda exclusiva para "Acelerar con Gemas" (20 gemas), así que pedirle 3 gemas a esta ayuda competía con ese único uso y no calzaba con el resto (50/50 y +10s ya pagan en monedas). Corregido en `lib/ayudas.ts`: Pista ahora cuesta **25 monedas** (más cara que el 50/50 porque resuelve la pregunta entera, no solo elimina 2 opciones) — sin tocar ningún otro archivo, la Tienda y la barra de ayudas dentro de los retos leen todas del mismo `AYUDAS_CONFIG`.
+Verificado: `tsc` ✓ · `build` ✓ · confirmado en el navegador que la Tienda ya muestra el ícono de moneda (no de gema) y el precio "25" en la tarjeta de Pista.
+
 ## Sopa de letras: 80s → 100s (2026-09-09)
 El usuario pidió más tiempo para encontrar las 7 palabras. `SOPA_SEGUNDOS` en `app/app/retos/sopa-letras/page.tsx`: 80 → 100. Verificado: `tsc` ✓ · `build` ✓ (cambio de una constante, sin riesgo visual).
 
