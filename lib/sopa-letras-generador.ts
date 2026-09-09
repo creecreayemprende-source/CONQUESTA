@@ -79,7 +79,10 @@ export function generarSopa(palabras: string[], direcciones: (keyof typeof DIREC
   const ordenadas = [...palabras].sort((a, b) => b.length - a.length);
 
   for (let intentoGrid = 0; intentoGrid < 25; intentoGrid++) {
-    const tamano = Math.min(15, Math.max(masLarga + 2, 9) + Math.floor(intentoGrid / 4));
+    // Rejilla lo más ajustada posible (+1 de holgura, no +2) para que cada
+    // letra se vea más grande en pantalla — el techo de 15 se mantiene igual
+    // como red de seguridad si el backtracking necesita más espacio.
+    const tamano = Math.min(15, Math.max(masLarga + 1, 9) + Math.floor(intentoGrid / 4));
     const grid: (string | null)[][] = Array.from({ length: tamano }, () => Array(tamano).fill(null));
     const posiciones: Record<string, Celda[]> = {};
     let ok = true;

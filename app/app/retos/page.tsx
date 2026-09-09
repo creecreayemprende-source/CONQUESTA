@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAppState } from "@/lib/app-state-context";
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { Send, Swords, Type, Trophy, Hourglass, Check, Lightbulb, Search } from "lucide-react";
+import { Send, Swords, Type, Trophy, Hourglass, Check, Lightbulb, Search, Zap } from "lucide-react";
 
 interface RetoRow {
   id: string;
@@ -67,18 +67,17 @@ export default function RetosPage() {
         <p className="text-sm text-txt-secondary">Compara tu nivel con tus amigos</p>
       </div>
 
-      <Link
-        href="/app/retos/desafio"
-        className="flex flex-col items-center gap-2 rounded-xl bg-brand-primary p-4 text-center shadow-md"
-      >
-        <span className="flex items-center gap-2 font-display text-base font-bold text-white">
-          <Send className="h-4 w-4" strokeWidth={2.2} />
-          Reto de Cultura General
+      <div className="flex items-start gap-3 rounded-2xl bg-brand-primary p-4 shadow-md">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 text-white">
+          <Zap className="h-5 w-5" strokeWidth={2.4} fill="currentColor" />
         </span>
-        <p className="text-xs text-white/85">
-          20 preguntas, contra tu propio cronómetro — reta a un amigo por WhatsApp al terminar
-        </p>
-      </Link>
+        <div className="flex-1">
+          <p className="font-display text-sm font-bold text-white">Tu combustible para avanzar</p>
+          <p className="mt-0.5 text-xs leading-relaxed text-white/85">
+            Juega y reta a tus amigos para ganar monedas — te dan ayudas (50/50, +tiempo) y gemas para acelerar tu ruta.
+          </p>
+        </div>
+      </div>
 
       <Link
         href="/app/retos/ahorcado"
@@ -119,6 +118,19 @@ export default function RetosPage() {
         </p>
       </Link>
 
+      <Link
+        href="/app/retos/desafio"
+        className="flex flex-col items-center gap-2 rounded-xl border-2 border-brand-primary bg-surface-primary p-4 text-center shadow-sm"
+      >
+        <span className="flex items-center gap-2 font-display text-base font-bold text-txt-primary">
+          <Send className="h-4 w-4 text-brand-primary" strokeWidth={2.2} />
+          Reto de Cultura General
+        </span>
+        <p className="text-xs text-txt-secondary">
+          20 preguntas, contra tu propio cronómetro — reta a un amigo por WhatsApp al terminar
+        </p>
+      </Link>
+
       <div>
         <div className="flex gap-2">
           {PESTANAS.map((p) => (
@@ -140,17 +152,33 @@ export default function RetosPage() {
           {retos === null && <div className="h-16 animate-pulse rounded-xl bg-surface-secondary" />}
 
           {retos !== null && listaActual.length === 0 && (
-            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border-strong py-8 text-center">
+            <div className="flex flex-col items-center gap-3 rounded-2xl bg-surface-secondary px-6 py-8 text-center">
               <span className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-primary-soft text-brand-primary">
                 <Swords className="h-5 w-5" strokeWidth={2} />
               </span>
-              <p className="max-w-56 text-sm text-txt-secondary">
+              <p className="max-w-56 text-sm font-medium text-txt-primary">
                 {pestana === "Tu turno"
-                  ? "Nadie te ha retado todavía. Cuando alguien te rete por WhatsApp, aparecerá aquí."
+                  ? "Nadie te ha retado todavía"
                   : pestana === "Esperando respuesta"
-                    ? "Retos que envíes aparecerán aquí mientras tu amigo no haya jugado."
-                    : "Todavía no completas ningún reto 1 a 1."}
+                    ? "No tienes retos esperando respuesta"
+                    : "Todavía no completas ningún reto 1 a 1"}
               </p>
+              <p className="max-w-56 text-xs text-txt-secondary">
+                {pestana === "Tu turno"
+                  ? "Cuando alguien te rete por WhatsApp, aparecerá aquí."
+                  : pestana === "Esperando respuesta"
+                    ? "Los retos que envíes aparecerán aquí mientras tu amigo no haya jugado."
+                    : "Juega tu primer duelo por WhatsApp y aquí verás cómo te fue."}
+              </p>
+              {pestana !== "Historial" && (
+                <Link
+                  href="/app/retos/desafio"
+                  className="mt-1 flex h-10 items-center justify-center gap-1.5 rounded-lg bg-brand-primary px-4 text-xs font-bold text-white"
+                >
+                  <Send className="h-3.5 w-3.5" strokeWidth={2.2} />
+                  Retar a un amigo
+                </Link>
+              )}
             </div>
           )}
 

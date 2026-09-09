@@ -283,7 +283,7 @@ export default function SopaLetrasPage() {
       <div className="mt-3 flex justify-center">
         <div
           className="grid touch-none select-none gap-0.5"
-          style={{ gridTemplateColumns: `repeat(${sopa.tamano}, minmax(0, 1fr))`, width: "100%", maxWidth: 360 }}
+          style={{ gridTemplateColumns: `repeat(${sopa.tamano}, minmax(0, 1fr))`, width: "100%", maxWidth: 380 }}
           onPointerDown={iniciarArrastre}
           onPointerMove={continuarArrastre}
           onPointerUp={soltarArrastre}
@@ -300,7 +300,7 @@ export default function SopaLetrasPage() {
                   key={k}
                   data-fila={f}
                   data-col={c}
-                  className={`flex aspect-square items-center justify-center rounded-sm font-display text-xs font-bold uppercase transition-colors duration-150 ${
+                  className={`flex aspect-square items-center justify-center rounded-sm font-display text-sm font-bold uppercase transition-colors duration-150 ${
                     color
                       ? "text-white"
                       : error
