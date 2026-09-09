@@ -37,7 +37,7 @@ export interface Inventario {
 }
 
 export interface AppState {
-  v: 12;
+  v: 13;
   nombre: string;
   avatarUrl: string | null;
   recordatorioDiario: boolean;
@@ -54,6 +54,13 @@ export interface AppState {
   currentStreak: number;
   longestStreak: number;
   lastActiveOn: string | null;
+  // Hitos de racha (7/14/30 días) cuya recompensa ya se otorgó — cada uno se
+  // paga una sola vez en la vida de la cuenta, aunque la racha se rompa y
+  // vuelva a llegar a ese número más adelante.
+  hitosRachaGanados: number[];
+  // Hito recién alcanzado en esta sesión, pendiente de mostrarse en el modal
+  // de celebración — se limpia (vuelve a null) en cuanto el usuario lo ve.
+  hitoRachaPendienteDeMostrar: number | null;
   progresoPorPais: Record<string, ProgresoPais>;
   retos: Reto[];
   inventario: Inventario;
@@ -61,6 +68,12 @@ export interface AppState {
   categoriasFavoritas: Categoria[]; // elegidas en el onboarding, para personalizar el orden de categorías
   trialInicioFecha: string | null; // fecha (YYYY-MM-DD) en que activó la prueba Pro de 7 días
   musicaSilenciada: boolean; // preferencia guardada del loop ambiental de fondo
+  // Aviso educativo ("juega Retos para ganar monedas rápido, usa gemas para
+  // acelerar tu ruta") mostrado una sola vez en la pantalla del país.
+  tipAcelerarVisto: boolean;
+  // Ids de retos_1v1 donde ya se le pagó al retador el bono de victoria —
+  // evita pagarlo de nuevo cada vez que vuelve a ver el resultado.
+  retosGanadosNotificados: string[];
   // Membresía real (Sesión 6): estos 3 campos solo los escribe el webhook de
   // Hotmart en el servidor — el navegador nunca los puede editar (columnas
   // bloqueadas por permiso en la base de datos, ver 0003_hotmart_membership.sql).
@@ -69,7 +82,7 @@ export interface AppState {
   graceEndsAt: string | null; // ISO — hasta cuándo hay gracia si el pago falló
 }
 
-const KEY = "conquesta_app_state_v12";
+const KEY = "conquesta_app_state_v13";
 
 function rondaVacia(): RondaEstado {
   return { completado: false, aciertos: 0, total: 0 };
@@ -94,7 +107,7 @@ export function progresoPaisVacio(): ProgresoPais {
 // quedaría inconsistente con lo que el usuario en verdad jugó.
 function estadoInicial(): AppState {
   return {
-    v: 12,
+    v: 13,
     nombre: "Sofía",
     avatarUrl: null,
     recordatorioDiario: false,
@@ -106,6 +119,8 @@ function estadoInicial(): AppState {
     currentStreak: 0,
     longestStreak: 0,
     lastActiveOn: null,
+    hitosRachaGanados: [],
+    hitoRachaPendienteDeMostrar: null,
     progresoPorPais: {},
     // Los retos 1 a 1 contra amigos necesitan backend real (Supabase, Sesión 6)
     // para sincronizar turnos entre dos personas — hasta entonces, sin datos de
@@ -116,6 +131,8 @@ function estadoInicial(): AppState {
     categoriasFavoritas: [],
     trialInicioFecha: null,
     musicaSilenciada: false,
+    tipAcelerarVisto: false,
+    retosGanadosNotificados: [],
     membershipStatus: "free",
     accessUntil: null,
     graceEndsAt: null,
@@ -128,7 +145,7 @@ export function loadAppState(): AppState {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return estadoInicial();
     const parsed = JSON.parse(raw);
-    if (parsed?.v !== 12) return estadoInicial();
+    if (parsed?.v !== 13) return estadoInicial();
     return parsed as AppState;
   } catch {
     return estadoInicial();
@@ -211,6 +228,36 @@ export function otorgarInsigniaSiCorresponde(state: AppState, pais: string): App
   return { ...state, insigniasGanadas: [...state.insigniasGanadas, ruta.id] };
 }
 
+/** Costo en Gemas de acelerar el país actual: completa de un golpe todas las
+ * categorías y el Reto Final que le falten, y desbloquea el siguiente país
+ * de la ruta — sin otorgar monedas (esas se ganan jugando de verdad). */
+export const GEMAS_ACELERAR_PAIS = 20;
+
+export function acelerarPaisConGemas(state: AppState, pais: string): AppState {
+  const progreso = progresoDePais(state, pais);
+  const categoriasCompletas = {} as Record<Categoria, ProgresoCategoria>;
+  categoriasDelPais().forEach((c) => {
+    const actual = progreso.categorias[c] ?? categoriaVacia();
+    const rondasCompletas = {} as Record<RondaId, RondaEstado>;
+    (Object.keys(RONDAS) as RondaId[]).forEach((r) => {
+      const cantidad = RONDAS[r].cantidad;
+      rondasCompletas[r] = actual.rondas[r].completado
+        ? actual.rondas[r]
+        : { completado: true, aciertos: cantidad, total: cantidad };
+    });
+    categoriasCompletas[c] = { rondas: rondasCompletas };
+  });
+  const conProgreso: AppState = {
+    ...state,
+    gems: state.gems - GEMAS_ACELERAR_PAIS,
+    progresoPorPais: {
+      ...state.progresoPorPais,
+      [pais]: { categorias: categoriasCompletas, retoFinalCompletado: true },
+    },
+  };
+  return otorgarInsigniaSiCorresponde(conProgreso, pais);
+}
+
 export function pctPais(progreso: ProgresoPais): number {
   let etapas = 0;
   categoriasDelPais().forEach((c) => {
@@ -228,17 +275,46 @@ function diferenciaDias(a: string, b: string): number {
   return Math.round((new Date(b).getTime() - new Date(a).getTime()) / msPorDia);
 }
 
+/** Premios de racha — se pagan una sola vez por cuenta, aunque la racha se
+ * rompa y vuelva a alcanzar el mismo número de días más adelante. Son la
+ * fuente principal para conseguir Gemas fuera de conquistar países. */
+export const HITOS_RACHA: { dias: number; monedas: number; gemas: number }[] = [
+  { dias: 7, monedas: 50, gemas: 5 },
+  { dias: 14, monedas: 100, gemas: 10 },
+  { dias: 30, monedas: 300, gemas: 25 },
+];
+
+function aplicarHitoRachaSiCorresponde(state: AppState, streakActual: number): AppState {
+  const hito = HITOS_RACHA.find((h) => h.dias === streakActual && !state.hitosRachaGanados.includes(h.dias));
+  if (!hito) return state;
+  return {
+    ...state,
+    coins: state.coins + hito.monedas,
+    monedasGanadasTotal: state.monedasGanadasTotal + hito.monedas,
+    gems: state.gems + hito.gemas,
+    hitosRachaGanados: [...state.hitosRachaGanados, hito.dias],
+    hitoRachaPendienteDeMostrar: hito.dias,
+  };
+}
+
 export function registrarActividad(state: AppState, hoy: string): AppState {
   if (state.lastActiveOn === hoy) return state;
   if (state.lastActiveOn === null) {
-    return { ...state, currentStreak: 1, longestStreak: Math.max(1, state.longestStreak), lastActiveOn: hoy };
+    const base = { ...state, currentStreak: 1, longestStreak: Math.max(1, state.longestStreak), lastActiveOn: hoy };
+    return aplicarHitoRachaSiCorresponde(base, 1);
   }
   const dias = diferenciaDias(state.lastActiveOn, hoy);
   if (dias === 1) {
     const nueva = state.currentStreak + 1;
-    return { ...state, currentStreak: nueva, longestStreak: Math.max(nueva, state.longestStreak), lastActiveOn: hoy };
+    const base = { ...state, currentStreak: nueva, longestStreak: Math.max(nueva, state.longestStreak), lastActiveOn: hoy };
+    return aplicarHitoRachaSiCorresponde(base, nueva);
   }
   return { ...state, currentStreak: 1, lastActiveOn: hoy };
+}
+
+/** El modal de celebración ya se mostró — libera el hito pendiente. */
+export function limpiarHitoRachaPendiente(state: AppState): AppState {
+  return { ...state, hitoRachaPendienteDeMostrar: null };
 }
 
 /** Aplica al estado REAL de la app lo que el usuario ganó/eligió durante el

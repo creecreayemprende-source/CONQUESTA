@@ -89,9 +89,11 @@ export default function TiendaPage() {
       </div>
 
       <p className="text-center text-xs text-txt-tertiary">
-        Gana monedas y gemas jugando cualquier ronda. No hace falta venir aquí antes de jugar: si
-        no tienes una ayuda pero te alcanzan tus monedas o gemas, también puedes comprarla al
-        instante desde la barra de ayudas dentro de cualquier reto.
+        Gana monedas jugando los Retos (Ahorcado, Sopa de Letras, Luces, Duelos) — es la vía más
+        rápida. Las Gemas se ganan conquistando países y con los premios de racha (7/14/30 días).
+        No hace falta venir aquí antes de jugar: si no tienes una ayuda pero te alcanzan tus
+        monedas o gemas, también puedes comprarla al instante desde la barra de ayudas dentro de
+        cualquier reto.
       </p>
     </div>
   );

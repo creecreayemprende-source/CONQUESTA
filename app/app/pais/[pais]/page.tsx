@@ -1,12 +1,22 @@
 "use client";
 
-import { use, useEffect } from "react";
+import { use, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Stamp, Check } from "lucide-react";
+import { ChevronLeft, Stamp, Check, Gem, Sparkles, X as XIcon } from "lucide-react";
 import { useAppState } from "@/lib/app-state-context";
-import { progresoDePais, pctPais, categoriaCompleta100, todasLasCategoriasCompletas, paisDesbloqueadoEnRuta, puedeJugarPais, categoriasOrdenadasPorFavoritas } from "@/lib/app-state";
+import {
+  progresoDePais,
+  pctPais,
+  categoriaCompleta100,
+  todasLasCategoriasCompletas,
+  paisDesbloqueadoEnRuta,
+  puedeJugarPais,
+  categoriasOrdenadasPorFavoritas,
+  acelerarPaisConGemas,
+  GEMAS_ACELERAR_PAIS,
+} from "@/lib/app-state";
 import { categoriasDelPais, PAISES_AMERICA } from "@/lib/countries-data";
 import { CATEGORIA_COLOR as COLOR_VAR } from "@/lib/category-style";
 import { CategoryIcon } from "@/components/app/CategoryIcon";
@@ -16,7 +26,8 @@ export default function PaisPage({ params }: { params: Promise<{ pais: string }>
   const { pais: paisParam } = use(params);
   const nombrePais = decodeURIComponent(paisParam);
   const router = useRouter();
-  const { state, ready } = useAppState();
+  const { state, setState, ready, guardarAhora } = useAppState();
+  const [confirmandoAcelerar, setConfirmandoAcelerar] = useState(false);
 
   const ruta = rutaDelPais(nombrePais);
   const secuenciaOk = !ready || !ruta || paisDesbloqueadoEnRuta(state, nombrePais);
@@ -46,6 +57,21 @@ export default function PaisPage({ params }: { params: Promise<{ pais: string }>
   // Personalización real del onboarding: sus categorías favoritas van primero.
   const categorias = categoriasOrdenadasPorFavoritas(categoriasDelPais(), state.categoriasFavoritas);
   const todasCompletas = todasLasCategoriasCompletas(progreso);
+  const alcanzaParaAcelerar = state.gems >= GEMAS_ACELERAR_PAIS;
+
+  function cerrarTip() {
+    setState((s) => ({ ...s, tipAcelerarVisto: true }));
+  }
+
+  function confirmarAcelerar() {
+    if (!alcanzaParaAcelerar) return;
+    setState((s) => {
+      const nuevo = acelerarPaisConGemas(s, nombrePais);
+      void guardarAhora(nuevo);
+      return nuevo;
+    });
+    setConfirmandoAcelerar(false);
+  }
 
   return (
     <div className="flex flex-col">
@@ -95,6 +121,24 @@ export default function PaisPage({ params }: { params: Promise<{ pais: string }>
           <div className="h-full rounded-full bg-brand-primary transition-[width] duration-500 ease-out" style={{ width: `${pct}%` }} />
         </div>
 
+        {!state.tipAcelerarVisto && (
+          <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-brand-primary/30 bg-brand-primary-soft p-3">
+            <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand-primary" strokeWidth={2.2} />
+            <p className="flex-1 text-xs leading-relaxed text-txt-primary">
+              <strong>Tip:</strong> juega los Retos para ganar monedas rápido — te alcanzan para ayudas 50/50 o
+              +tiempo. Con Gemas puedes acelerar tu avance en la ruta.
+            </p>
+            <button
+              type="button"
+              onClick={cerrarTip}
+              aria-label="Cerrar aviso"
+              className="shrink-0 text-txt-tertiary"
+            >
+              <XIcon className="h-4 w-4" strokeWidth={2.2} />
+            </button>
+          </div>
+        )}
+
         <div className="mt-5 grid grid-cols-2 gap-3">
           {categorias.map((cat) => {
             const info = progreso.categorias[cat];
@@ -138,6 +182,62 @@ export default function PaisPage({ params }: { params: Promise<{ pais: string }>
                 : "Reto final (completa las 6 categorías al 100%)"}
             </span>
           </Link>
+
+          {!progreso.retoFinalCompletado && (
+            <div className="col-span-2 rounded-xl border border-border-default bg-surface-primary p-4">
+              {!confirmandoAcelerar ? (
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-primary-soft text-brand-primary">
+                    <Gem className="h-5 w-5" strokeWidth={2.2} />
+                  </span>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-txt-primary">Acelerar con Gemas</p>
+                    <p className="text-xs text-txt-tertiary">
+                      Completa lo que falte de {nombrePais} al instante y pasa al siguiente país
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={!alcanzaParaAcelerar}
+                    onClick={() => setConfirmandoAcelerar(true)}
+                    className="flex h-9 shrink-0 items-center gap-1 rounded-lg bg-brand-primary px-3 text-xs font-bold text-white disabled:opacity-40"
+                  >
+                    <Gem className="h-3.5 w-3.5" strokeWidth={2.4} />
+                    {GEMAS_ACELERAR_PAIS}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3 text-center">
+                  <p className="text-xs text-txt-secondary">
+                    Se completarán las categorías que falten y conquistarás {nombrePais} de una vez. No ganarás las
+                    monedas de jugarlas — se descontarán {GEMAS_ACELERAR_PAIS} gemas. ¿Seguro?
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setConfirmandoAcelerar(false)}
+                      className="flex h-10 flex-1 items-center justify-center rounded-lg border border-border-strong text-xs font-bold text-txt-primary"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={confirmarAcelerar}
+                      className="flex h-10 flex-1 items-center justify-center gap-1 rounded-lg bg-brand-primary text-xs font-bold text-white"
+                    >
+                      <Gem className="h-3.5 w-3.5" strokeWidth={2.4} />
+                      Confirmar
+                    </button>
+                  </div>
+                </div>
+              )}
+              {!alcanzaParaAcelerar && !confirmandoAcelerar && (
+                <p className="mt-2 text-center text-xs text-txt-tertiary">
+                  Te faltan gemas — se ganan conquistando países o en los premios de racha (7/14/30 días)
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

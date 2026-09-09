@@ -32,6 +32,9 @@ interface ProfileRow {
   hora_recordatorio: string | null;
   monedas_ganadas_total: number;
   mejor_nivel_luces: number;
+  hitos_racha_ganados: number[];
+  tip_acelerar_visto: boolean;
+  retos_ganados_notificados: string[];
 }
 
 interface RondaRow {
@@ -103,7 +106,7 @@ export async function fetchAppState(
       (paises ?? []).length === 0);
 
   const state: AppState = {
-    v: 12,
+    v: 13,
     nombre: p?.nombre ?? "Explorador",
     avatarUrl: p?.avatar_url ?? null,
     recordatorioDiario: p?.recordatorio_diario ?? false,
@@ -115,6 +118,8 @@ export async function fetchAppState(
     currentStreak: p?.current_streak ?? 0,
     longestStreak: p?.longest_streak ?? 0,
     lastActiveOn: p?.last_active_on ?? null,
+    hitosRachaGanados: p?.hitos_racha_ganados ?? [],
+    hitoRachaPendienteDeMostrar: null,
     progresoPorPais,
     retos: [],
     inventario: {
@@ -126,6 +131,8 @@ export async function fetchAppState(
     categoriasFavoritas: (p?.categorias_favoritas ?? []) as Categoria[],
     trialInicioFecha: p?.trial_inicio_fecha ?? null,
     musicaSilenciada: p?.musica_silenciada ?? false,
+    tipAcelerarVisto: p?.tip_acelerar_visto ?? false,
+    retosGanadosNotificados: p?.retos_ganados_notificados ?? [],
     membershipStatus: p?.membership_status ?? "free",
     accessUntil: p?.access_until ?? null,
     graceEndsAt: p?.grace_ends_at ?? null,
@@ -157,6 +164,9 @@ export async function pushAppState(supabase: SupabaseClient, userId: string, sta
       hora_recordatorio: state.horaRecordatorio,
       monedas_ganadas_total: state.monedasGanadasTotal,
       mejor_nivel_luces: state.mejorNivelLuces,
+      hitos_racha_ganados: state.hitosRachaGanados,
+      tip_acelerar_visto: state.tipAcelerarVisto,
+      retos_ganados_notificados: state.retosGanadosNotificados,
       updated_at: new Date().toISOString(),
     })
     .eq("id", userId);

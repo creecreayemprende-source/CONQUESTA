@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, Check, X as XIcon, Swords, Trophy, Clock3 } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase/client";
@@ -10,6 +10,12 @@ import { Confetti } from "@/components/app/Confetti";
 import { SaldoMonedas } from "@/components/app/SaldoMonedas";
 import { useAppState } from "@/lib/app-state-context";
 import type { PreguntaTrivia } from "@/lib/onboarding-data";
+
+// Mismos montos que en la pantalla del retador (`desafio/page.tsx`) — los
+// Duelos por WhatsApp son la puerta de entrada de nuevos usuarios, así que
+// se incentivan más que el resto de los Retos.
+const DUELO_MONEDAS_BASE = 50;
+const DUELO_MONEDAS_BONO_VICTORIA = 15;
 
 function formatearTiempo(segundos: number): string {
   const m = Math.floor(segundos / 60);
@@ -43,8 +49,9 @@ type Vista =
 export default function Reto1v1Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const { state } = useAppState();
+  const { state, setState } = useAppState();
   const { playCorrect, playIncorrect, playVictoria } = useSound();
+  const bonoRetadorRef = useRef(false);
 
   const [vista, setVista] = useState<Vista>("cargando");
   const [reto, setReto] = useState<RetoRow | null>(null);
@@ -105,6 +112,23 @@ export default function Reto1v1Page({ params }: { params: Promise<{ id: string }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  // El retador no sabe si ganó hasta que su amigo termine de jugar (en otro
+  // dispositivo) — el bono de victoria se paga cuando vuelve a abrir este
+  // link y ve el resultado, una sola vez por reto (`retosGanadosNotificados`).
+  useEffect(() => {
+    if (vista !== "es_tu_propio_reto" || !reto || bonoRetadorRef.current) return;
+    if (reto.estado !== "completado" || reto.puntaje_retado == null) return;
+    if (reto.puntaje_retador <= reto.puntaje_retado) return;
+    if (state.retosGanadosNotificados.includes(reto.id)) return;
+    bonoRetadorRef.current = true;
+    setState((s) => ({
+      ...s,
+      coins: s.coins + DUELO_MONEDAS_BONO_VICTORIA,
+      monedasGanadasTotal: s.monedasGanadasTotal + DUELO_MONEDAS_BONO_VICTORIA,
+      retosGanadosNotificados: [...s.retosGanadosNotificados, reto.id],
+    }));
+  }, [vista, reto, state.retosGanadosNotificados, setState]);
+
   async function cargarPreguntas(supabase: ReturnType<typeof supabaseBrowser>, retoId: string) {
     const { data: indices } = await supabase.rpc("obtener_preguntas_reto_1v1", { p_id: retoId });
     if (!indices) return;
@@ -146,6 +170,9 @@ export default function Reto1v1Page({ params }: { params: Promise<{ id: string }
           p_puntaje: nuevosAciertos,
           p_tiempo_segundos: segundosTranscurridos,
         });
+        const leGano = reto ? nuevosAciertos > reto.puntaje_retador : false;
+        const monedas = DUELO_MONEDAS_BASE + (leGano ? DUELO_MONEDAS_BONO_VICTORIA : 0);
+        setState((s) => ({ ...s, coins: s.coins + monedas, monedasGanadasTotal: s.monedasGanadasTotal + monedas }));
         if (nuevosAciertos / preguntas.length >= 0.7) playVictoria();
         setVista("resultado");
       }
@@ -186,6 +213,11 @@ export default function Reto1v1Page({ params }: { params: Promise<{ id: string }
               }.`
             : "Todavía esperando a que tu amigo abra el link y juegue."}
         </p>
+        {reto?.estado === "completado" && reto.puntaje_retado != null && reto.puntaje_retador > reto.puntaje_retado && (
+          <span className="rounded-full bg-gold-soft px-4 py-1.5 text-xs font-bold text-gold">
+            +{DUELO_MONEDAS_BONO_VICTORIA} monedas por ganarle
+          </span>
+        )}
         <button
           type="button"
           onClick={() => router.push("/app/retos")}
@@ -312,6 +344,9 @@ export default function Reto1v1Page({ params }: { params: Promise<{ id: string }
           <span className="rounded-full bg-brand-primary-soft px-4 py-2">Tú: {miPuntaje}/{reto.total_preguntas}</span>
           <span className="rounded-full bg-surface-secondary px-4 py-2">
             {reto.retador_nombre}: {reto.puntaje_retador}/{reto.total_preguntas}
+          </span>
+          <span className="rounded-full bg-gold-soft px-4 py-2 text-gold">
+            +{DUELO_MONEDAS_BASE + (gane ? DUELO_MONEDAS_BONO_VICTORIA : 0)} monedas
           </span>
         </div>
         {(tiempoFinalRetado != null || reto.tiempo_retador_segundos != null) && (

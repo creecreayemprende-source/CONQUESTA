@@ -19,6 +19,9 @@ import { CountUp } from "@/components/app/CountUp";
 import type { PreguntaTrivia } from "@/lib/onboarding-data";
 
 const UMBRAL_CONQUISTA = 0.7; // 70% de aciertos conquista el país
+// Recompensa plana al conquistar (antes pagaba hasta 100 monedas por acierto,
+// igual de "fácil" que la Ruta — ver NIVEL_MONEDAS en la pantalla de ronda).
+const RETO_FINAL_MONEDAS = 20;
 
 export default function RetoFinalPage({ params }: { params: Promise<{ pais: string }> }) {
   const { pais: paisParam } = use(params);
@@ -62,8 +65,8 @@ export default function RetoFinalPage({ params }: { params: Promise<{ pais: stri
       const progreso = progresoDePais(conRacha, pais);
       const conProgreso: typeof conRacha = {
         ...conRacha,
-        coins: conRacha.coins + aciertosFinal * 5,
-        monedasGanadasTotal: conRacha.monedasGanadasTotal + aciertosFinal * 5,
+        coins: conRacha.coins + (conquistado ? RETO_FINAL_MONEDAS : 0),
+        monedasGanadasTotal: conRacha.monedasGanadasTotal + (conquistado ? RETO_FINAL_MONEDAS : 0),
         gems: conquistado ? conRacha.gems + 3 : conRacha.gems,
         progresoPorPais: {
           ...conRacha.progresoPorPais,
@@ -248,7 +251,7 @@ export default function RetoFinalPage({ params }: { params: Promise<{ pais: stri
         {conquistado && (
           <div className="flex gap-3 text-sm font-semibold text-txt-primary">
             <span className="rounded-full bg-surface-secondary px-3 py-1.5">
-              +<CountUp value={aciertos * 5} /> monedas
+              +<CountUp value={RETO_FINAL_MONEDAS} /> monedas
             </span>
             <span className="rounded-full bg-surface-secondary px-3 py-1.5">+3 gemas</span>
           </div>

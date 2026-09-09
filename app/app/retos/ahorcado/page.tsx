@@ -9,7 +9,7 @@ import { useSound } from "@/lib/use-sound";
 import { Confetti } from "@/components/app/Confetti";
 
 const ERRORES_MAX = 6;
-const RECOMPENSA_MONEDAS = 15;
+const RECOMPENSA_MONEDAS = 25;
 const TECLADO = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
 /** Dibujo clásico del ahorcado — cada error revela una parte más. */

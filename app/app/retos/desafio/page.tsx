@@ -7,9 +7,16 @@ import { SaldoMonedas } from "@/components/app/SaldoMonedas";
 import { preguntasCulturaGeneralConIndices } from "@/lib/trivia-cultura-general";
 import { useSound } from "@/lib/use-sound";
 import { Confetti } from "@/components/app/Confetti";
+import { CountUp } from "@/components/app/CountUp";
 import type { PreguntaTrivia } from "@/lib/onboarding-data";
 import { useAppState } from "@/lib/app-state-context";
 import { supabaseBrowser } from "@/lib/supabase/client";
+
+// Los Duelos por WhatsApp son la mejor puerta de entrada para que un usuario
+// nuevo conozca la app — se incentivan más que los demás Retos: monedas por
+// completar (sin importar el resultado) + un bono si le gana a su amigo.
+const DUELO_MONEDAS_BASE = 50;
+const DUELO_MONEDAS_BONO_VICTORIA = 15;
 
 function formatearTiempo(segundos: number): string {
   const m = Math.floor(segundos / 60);
@@ -19,7 +26,7 @@ function formatearTiempo(segundos: number): string {
 
 export default function DesafioCulturaGeneralPage() {
   const router = useRouter();
-  const { state } = useAppState();
+  const { state, setState } = useAppState();
   const { playCorrect, playIncorrect, playVictoria } = useSound();
 
   // Igual que el resto del juego: Math.random() para barajar solo corre en el
@@ -111,6 +118,11 @@ export default function DesafioCulturaGeneralPage() {
       } else {
         setAciertos(nuevosAciertos);
         setTerminado(true);
+        setState((s) => ({
+          ...s,
+          coins: s.coins + DUELO_MONEDAS_BASE,
+          monedasGanadasTotal: s.monedasGanadasTotal + DUELO_MONEDAS_BASE,
+        }));
         if (nuevosAciertos / preguntas.length >= 0.7) playVictoria();
       }
     }, 600);
@@ -166,7 +178,13 @@ export default function DesafioCulturaGeneralPage() {
             <Clock3 className="h-3.5 w-3.5" strokeWidth={2.4} />
             {tiempoFormateado}
           </span>
+          <span className="rounded-full bg-gold-soft px-4 py-2 text-gold">
+            +<CountUp value={DUELO_MONEDAS_BASE} /> monedas
+          </span>
         </div>
+        <p className="max-w-56 text-xs text-txt-tertiary">
+          Si tu amigo acepta el reto y no te supera, te llevas {DUELO_MONEDAS_BONO_VICTORIA} monedas extra.
+        </p>
 
         <div className="flex w-full max-w-xs flex-col gap-3">
           <a

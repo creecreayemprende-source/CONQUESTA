@@ -15,6 +15,12 @@ import { Confetti } from "@/components/app/Confetti";
 import { CountUp } from "@/components/app/CountUp";
 import type { Categoria } from "@/lib/onboarding-data";
 
+// Recompensa plana por nivel superado (Explorador/Descubridor/Experto) — antes
+// pagaba por cada respuesta correcta (hasta 35-50 monedas según la ronda), lo
+// que hacía la Ruta la forma más fácil de acumular monedas. Ahora la Ruta es
+// lenta a propósito: la fuente rápida de monedas son los Retos (minijuegos).
+const NIVEL_MONEDAS = 5;
+
 export default function JugarRondaPage({
   params,
 }: {
@@ -66,8 +72,8 @@ export default function JugarRondaPage({
       const nuevaRonda = { completado: aprobado, aciertos: aciertosFinal, total: preguntas.length };
       return {
         ...conRacha,
-        coins: conRacha.coins + aciertosFinal * 5,
-        monedasGanadasTotal: conRacha.monedasGanadasTotal + aciertosFinal * 5,
+        coins: conRacha.coins + (aprobado ? NIVEL_MONEDAS : 0),
+        monedasGanadasTotal: conRacha.monedasGanadasTotal + (aprobado ? NIVEL_MONEDAS : 0),
         progresoPorPais: {
           ...conRacha.progresoPorPais,
           [pais]: {
@@ -229,7 +235,7 @@ export default function JugarRondaPage({
         {aprobado && (
           <div className="flex gap-3 text-sm font-semibold text-txt-primary">
             <span className="rounded-full bg-surface-secondary px-3 py-1.5">
-              +<CountUp value={aciertos * 5} /> monedas
+              +<CountUp value={NIVEL_MONEDAS} /> monedas
             </span>
           </div>
         )}

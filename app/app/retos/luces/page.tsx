@@ -8,7 +8,7 @@ import { useSound } from "@/lib/use-sound";
 import { Confetti } from "@/components/app/Confetti";
 import { CountUp } from "@/components/app/CountUp";
 
-const RECOMPENSA_POR_NIVEL = 5;
+const RECOMPENSA_POR_NIVEL = 8;
 
 const COLORES = [
   { id: "rojo", activo: "var(--status-error)", suave: "var(--status-error-soft)" },

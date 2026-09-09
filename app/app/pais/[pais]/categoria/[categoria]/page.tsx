@@ -3,7 +3,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Lock, Check, Compass, Telescope, Crown, Clock } from "lucide-react";
+import { ChevronLeft, Lock, Check, Compass, Telescope, Crown, Clock, Coins, ChevronRight } from "lucide-react";
 import { useAppState } from "@/lib/app-state-context";
 import { progresoDePais, rondaDesbloqueada } from "@/lib/app-state";
 import { RONDAS, type RondaId } from "@/lib/trivia-bank";
@@ -62,6 +62,15 @@ export default function CategoriaPage({
           {categoria}
         </h1>
       </div>
+
+      <Link
+        href="/app/retos"
+        className="mt-3 flex items-center gap-2 rounded-lg bg-gold-soft px-3 py-2 text-xs font-semibold text-txt-primary"
+      >
+        <Coins className="h-3.5 w-3.5 shrink-0 text-gold" strokeWidth={2.2} />
+        <span className="flex-1">Gana más monedas en la sección Retos</span>
+        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-txt-tertiary" strokeWidth={2.2} />
+      </Link>
 
       <div className="mt-4 flex flex-col gap-3">
         {(Object.keys(RONDAS) as RondaId[]).map((ronda) => {
